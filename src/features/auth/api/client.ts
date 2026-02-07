@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { config } from "@/lib/config";
 
 export interface SignupInput {
@@ -6,19 +7,23 @@ export interface SignupInput {
   name?: string;
 }
 
-export interface ApiEnvelope<T> {
-  data: T | null;
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  } | null;
-  correlationId: string;
-}
+const apiErrorSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  details: z.unknown().optional(),
+});
 
-export interface SignupSuccessData {
-  message: string;
-}
+const signupSuccessDataSchema = z.object({
+  message: z.string(),
+});
+
+const apiEnvelopeSchema = z.object({
+  data: signupSuccessDataSchema.nullable(),
+  error: apiErrorSchema.nullable(),
+  correlationId: z.string(),
+});
+
+export type SignupSuccessData = z.infer<typeof signupSuccessDataSchema>;
 
 export type SignupResult =
   | { ok: true; data: SignupSuccessData; correlationId: string }
@@ -65,8 +70,8 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
     };
   }
 
-  const envelope = body as ApiEnvelope<SignupSuccessData> | null;
-  if (!envelope || typeof envelope !== "object" || !("correlationId" in envelope)) {
+  const parsed = apiEnvelopeSchema.safeParse(body);
+  if (!parsed.success) {
     return {
       ok: false,
       error: "Invalid response format.",
@@ -74,7 +79,8 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
     };
   }
 
-  const id = String(envelope.correlationId ?? correlationId);
+  const envelope = parsed.data;
+  const id = envelope.correlationId ?? correlationId;
 
   if (res.ok && envelope.data) {
     return {
@@ -101,4 +107,49 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
     error: "Something went wrong. Please try again.",
     correlationId: id,
   };
+}
+
+const oauthStartEnvelopeSchema = z.object({
+  data: z.object({ redirectUrl: z.string().url() }).nullable(),
+  error: apiErrorSchema.nullable(),
+  correlationId: z.string(),
+});
+
+export type OAuthProvider = "google" | "meta";
+
+export type GetOAuthStartUrlResult =
+  | { ok: true; redirectUrl: string }
+  | { ok: false; error: string };
+
+/**
+ * Fetches the OAuth start URL from the backend, then redirects the user to the provider.
+ * Call this when the user clicks "Sign in with Google" etc.
+ */
+export async function getOAuthStartUrl(
+  provider: OAuthProvider
+): Promise<GetOAuthStartUrlResult> {
+  try {
+    const res = await fetch(
+      `${config.apiUrl}/v1/auth/oauth/${provider}/start`,
+      { headers: { "x-correlation-id": crypto.randomUUID() } }
+    );
+    const body: unknown = await res.json().catch(() => null);
+    const parsed = oauthStartEnvelopeSchema.safeParse(body);
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid response from server." };
+    }
+    const envelope = parsed.data;
+    if (envelope.data?.redirectUrl) {
+      return { ok: true, redirectUrl: envelope.data.redirectUrl };
+    }
+    return {
+      ok: false,
+      error: envelope.error?.message ?? "OAuth is not available.",
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "Unable to reach the server. Please check your connection.",
+    };
+  }
 }
