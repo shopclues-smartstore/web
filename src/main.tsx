@@ -8,6 +8,10 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { PlaceholderPage } from "@/pages/PlaceholderPage"
 import { AddTeamPage } from "@/pages/AddTeamPage"
+import { StoreDetailsPage } from "@/pages/StoreDetailsPage"
+import { ConnectMarketplacePage } from "@/pages/ConnectMarketplacePage"
+import { ReviewPage } from "@/pages/ReviewPage"
+import { SyncingPage } from "@/pages/SyncingPage"
 import { AppShell } from "@/components/layout/AppShell"
 
 createRoot(document.getElementById("root")!).render(
@@ -19,7 +23,13 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* Onboarding routes */}
+        <Route path="/onboarding/store-details" element={<StoreDetailsPage />} />
+        <Route path="/onboarding/connect-marketplace" element={<ConnectMarketplacePage />} />
         <Route path="/onboarding/add-team" element={<AddTeamPage />} />
+        <Route path="/onboarding/review" element={<ReviewPage />} />
+        <Route path="/onboarding/syncing" element={<SyncingPage />} />
 
         {/* App Shell routes (post-login) */}
         <Route element={<AppShell />}>
