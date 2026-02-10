@@ -38,7 +38,12 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] Responsive design - mobile, tablet, desktop
 - [x] All interactive elements have data-testid attributes
 - [x] **Add Team Members onboarding step** (`/onboarding/add-team`) — invite form with role selector (Manager/Ops/Viewer), success banner, team members table with change role & remove, skip option, footer navigation (Back / Continue to Review & Start Sync)
-- [x] Testing: 100% pass rate on Add Team page (24/24 tests passed)
+- [x] **Onboarding Step 1: Store Details** (`/onboarding/store-details`) — store name, country dropdown with flag emojis (auto-selects currency/timezone), primary marketplace dropdown, collapsible optional section (business type, tax ID)
+- [x] **Onboarding Step 2: Connect Marketplace** (`/onboarding/connect-marketplace`) — marketplace cards (Amazon, Flipkart, Meesho, Wish, More coming soon disabled), connection panel with API key/seller ID/region, test/connect buttons, skip warning banner, security reassurance
+- [x] **Onboarding Step 3: Review & Start Sync** (`/onboarding/review`) — summary cards for store details, connected marketplaces, sync scope (Products/Inventory/Orders), edit links, info banner, Start Sync CTA
+- [x] **Syncing Transition Screen** (`/onboarding/syncing`) — animated progress steps (4 stages completing sequentially over 6s), skeleton loaders, friendly messages, "You're all set!" completion state with Go to Dashboard CTA
+- [x] **Shared OnboardingLayout** component with progress indicator
+- [x] Testing: 100% pass rate on all onboarding pages (31/31 tests passed)
 
 ## Prioritized Backlog
 ### P0 (Next)
