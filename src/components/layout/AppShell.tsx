@@ -28,7 +28,7 @@ export function AppShell() {
         data-testid="main-content"
         className={cn(
           "pt-16 min-h-screen sidebar-transition",
-          sidebarCollapsed ? "pl-16" : "pl-64"
+          sidebarCollapsed ? "md:pl-16" : "md:pl-64"
         )}
       >
         <div className="p-6 lg:p-8 max-w-7xl mx-auto animate-fade-up">
