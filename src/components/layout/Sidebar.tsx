@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
@@ -12,11 +11,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Products", icon: Package, path: "/products" },
+  { label: "Products", icon: Package, path: "/products", syncBadge: true },
   { label: "Inventory", icon: Warehouse, path: "/inventory" },
   { label: "Orders", icon: ShoppingCart, path: "/orders" },
   { label: "Pricing", icon: DollarSign, path: "/pricing" },
@@ -50,7 +50,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               to={item.path}
               data-testid={`nav-${item.label.toLowerCase()}`}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 group relative",
                 collapsed && "justify-center px-2",
                 isActive
                   ? "bg-primary/10 text-primary"
@@ -59,7 +59,27 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               title={collapsed ? item.label : undefined}
             >
               <item.icon className="size-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.syncBadge && (
+                    <span
+                      data-testid="products-sync-badge"
+                      className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                      title="Some marketplaces are still syncing"
+                    >
+                      <Loader2 className="size-2.5 animate-spin" />
+                      Syncing
+                    </span>
+                  )}
+                </>
+              )}
+              {/* Collapsed tooltip for sync badge */}
+              {collapsed && item.syncBadge && (
+                <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground text-primary-foreground text-xs px-2.5 py-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                  Some marketplaces are still syncing
+                </span>
+              )}
             </NavLink>
           )
         })}
