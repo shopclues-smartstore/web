@@ -1,0 +1,156 @@
+{
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a high-trust, seller-focused dashboard that feels 'fresh' and 'lightweight'—breaking the boring enterprise mold while maintaining clarity.",
+    "principles": [
+      "Fusion over Imitation: Mix 'Fintech Precision' (Stripe) with 'Organic Freshness' (Nature).",
+      "Emotion First: The seller should feel 'Calm Control'. No panic-inducing red alerts unless critical.",
+      "Content is King: Data is the hero. Use whitespace to let numbers breathe.",
+      "Zoom In: High fidelity on charts and metrics."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "primary": "Inter",
+      "secondary": "Plus Jakarta Sans",
+      "code": "JetBrains Mono"
+    },
+    "instructions": [
+      "IMPORT THESE FONTS in `/app/index.html` head:",
+      "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">",
+      "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>",
+      "<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">",
+      "Headings (h1-h3): Use 'Plus Jakarta Sans'. weights: 600/700. tracking-tight.",
+      "Body/UI: Use 'Inter'. weights: 400/500.",
+      "Numbers/Data: Use 'Inter' with tabular-nums feature."
+    ]
+  },
+  "colors": {
+    "theme": "light",
+    "palette_name": "Fresh Stripe",
+    "description": "A foundation of trustworthy slate greys, accented by vibrant electric blue and calming organic teal.",
+    "css_variables": {
+      "root": {
+        "--background": "oklch(0.985 0.002 247.8)",
+        "--foreground": "oklch(0.141 0.005 285.8)",
+        "--card": "oklch(1 0 0)",
+        "--card-foreground": "oklch(0.141 0.005 285.8)",
+        "--popover": "oklch(1 0 0)",
+        "--popover-foreground": "oklch(0.141 0.005 285.8)",
+        "--primary": "oklch(0.55 0.22 260)",
+        "--primary-foreground": "oklch(0.985 0 0)",
+        "--secondary": "oklch(0.95 0.04 190)",
+        "--secondary-foreground": "oklch(0.25 0.08 190)",
+        "--muted": "oklch(0.96 0.01 285.8)",
+        "--muted-foreground": "oklch(0.552 0.013 285.8)",
+        "--accent": "oklch(0.92 0.08 190)",
+        "--accent-foreground": "oklch(0.25 0.08 190)",
+        "--destructive": "oklch(0.6 0.18 25)",
+        "--destructive-foreground": "oklch(0.985 0 0)",
+        "--border": "oklch(0.92 0.004 286)",
+        "--input": "oklch(0.92 0.004 286)",
+        "--ring": "oklch(0.55 0.22 260)",
+        "--radius": "0.5rem"
+      },
+      "dark": {
+        "--background": "oklch(0.1 0.005 285.8)",
+        "--foreground": "oklch(0.985 0 0)",
+        "--card": "oklch(0.141 0.005 285.8)",
+        "--card-foreground": "oklch(0.985 0 0)",
+        "--primary": "oklch(0.65 0.22 260)",
+        "--primary-foreground": "oklch(0.1 0.005 285.8)"
+      }
+    },
+    "usage_rules": [
+      "NEVER use gradients for text.",
+      "Use `bg-secondary` for subtle highlights/badges, NOT for main buttons.",
+      "Use `text-muted-foreground` for labels and secondary text.",
+      "Borders should be subtle: `border-slate-100` or `border-border`."
+    ]
+  },
+  "layout": {
+    "grid_strategy": "Bento Grid (Mode B for Dashboard)",
+    "spacing": "Relaxed. Use `p-6` or `p-8` for cards. `gap-6` for grids.",
+    "sidebar": {
+      "state": "Collapsible",
+      "width_expanded": "w-64",
+      "width_collapsed": "w-16",
+      "bg": "bg-white",
+      "border": "border-r border-border"
+    },
+    "container": {
+      "max_width": "max-w-7xl",
+      "alignment": "mx-auto"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Rounded-md or Rounded-lg. Avoid pills unless it's a tag.",
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+    },
+    "cards": {
+      "style": "bg-white border border-border shadow-sm rounded-xl hover:shadow-md transition-shadow duration-200"
+    },
+    "inputs": {
+      "style": "h-10 rounded-md border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    },
+    "toasts": {
+      "library": "sonner",
+      "style": "rich-colors theme-light"
+    }
+  },
+  "images": {
+    "auth_background": {
+      "url": "https://images.unsplash.com/photo-1758551059627-e891d671e010?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Abstract teal waves",
+      "usage": "Split layout background for Signup/Login"
+    },
+    "user_avatar": {
+      "url": "https://images.unsplash.com/photo-1617925357736-8a4ea869b800?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "User Profile",
+      "usage": "Dashboard header avatar"
+    },
+    "workspace_hero": {
+      "url": "https://images.unsplash.com/photo-1699831112447-9c8c803f584b?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Clean workspace",
+      "usage": "Alternative auth image or landing"
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-200 ease-in-out",
+    "hover_effects": "hover:-translate-y-0.5 hover:shadow-lg",
+    "page_transition": "animate-in fade-in zoom-in-95 duration-300"
+  },
+  "accessibility": {
+    "rules": [
+      "Ensure 4.5:1 contrast for normal text.",
+      "Focus rings must be visible.",
+      "Use semantic HTML (nav, main, aside, section)."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. UPDATE `src/index.css` with the provided CSS variables for the 'Fresh Stripe' theme.",
+    "2. UPDATE `index.html` to include the Google Fonts.",
+    "3. CREATE the App Shell with a collapsible sidebar and fixed header.",
+    "4. IMPLEMENT the Dashboard with Bento Grid layout using the provided metrics.",
+    "5. BUILD Auth pages (Signup, Login, Forgot Password) using the Split Layout and provided images.",
+    "6. USE `lucide-react` for all icons.",
+    "7. ENSURE strict adherence to the spacing and shadow rules (subtle, airy).",
+    "8. IF YOU SEE `.tsx` files, use TypeScript. IF `.js`, use JavaScript. The guidelines apply to both.",
+    "9. Add `data-testid` to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: `transition: all`.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations",
+    "NEVER: use AI assistant Emoji characters",
+    "Every interaction needs micro-animations",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Use `sonner` for toasts"
+  ]
+}
