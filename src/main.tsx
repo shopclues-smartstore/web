@@ -7,6 +7,7 @@ import { LoginPage } from "@/pages/LoginPage"
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { PlaceholderPage } from "@/pages/PlaceholderPage"
+import { ProductsPage } from "@/pages/ProductsPage"
 import { AddTeamPage } from "@/pages/AddTeamPage"
 import { StoreDetailsPage } from "@/pages/StoreDetailsPage"
 import { ConnectMarketplacePage } from "@/pages/ConnectMarketplacePage"
@@ -34,7 +35,7 @@ createRoot(document.getElementById("root")!).render(
         {/* App Shell routes (post-login) */}
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/products" element={<PlaceholderPage />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/inventory" element={<PlaceholderPage />} />
           <Route path="/orders" element={<PlaceholderPage />} />
           <Route path="/pricing" element={<PlaceholderPage />} />
