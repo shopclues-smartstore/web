@@ -13,7 +13,8 @@
     "e2e": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test",
     "e2e:real": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers E2E_USE_REAL_API=1 playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:headed": "playwright test --headed"
+    "e2e:headed": "playwright test --headed",
+    "start": "vite --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
