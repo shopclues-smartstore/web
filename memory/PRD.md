@@ -37,7 +37,8 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] Google Fonts (Inter + Plus Jakarta Sans)
 - [x] Responsive design - mobile, tablet, desktop
 - [x] All interactive elements have data-testid attributes
-- [x] Testing: 95% pass rate (20/21 tests passed, mobile sidebar fix applied)
+- [x] **Add Team Members onboarding step** (`/onboarding/add-team`) — invite form with role selector (Manager/Ops/Viewer), success banner, team members table with change role & remove, skip option, footer navigation (Back / Continue to Review & Start Sync)
+- [x] Testing: 100% pass rate on Add Team page (24/24 tests passed)
 
 ## Prioritized Backlog
 ### P0 (Next)
