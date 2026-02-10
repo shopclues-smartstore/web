@@ -7,6 +7,7 @@ import { LoginPage } from "@/pages/LoginPage"
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { PlaceholderPage } from "@/pages/PlaceholderPage"
+import { AddTeamPage } from "@/pages/AddTeamPage"
 import { AppShell } from "@/components/layout/AppShell"
 
 createRoot(document.getElementById("root")!).render(
@@ -18,6 +19,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/onboarding/add-team" element={<AddTeamPage />} />
 
         {/* App Shell routes (post-login) */}
         <Route element={<AppShell />}>
