@@ -64,7 +64,7 @@ export function StoreDetailsPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={3}>
+    <OnboardingLayout steps={getOnboardingSteps(1)} currentStep={2} totalSteps={4}>
       <div data-testid="store-details-page">
         {/* Title */}
         <div className="flex items-start gap-4 mb-8">
@@ -255,7 +255,13 @@ export function StoreDetailsPage() {
         </p>
 
         {/* Footer */}
-        <div className="flex items-center justify-end border-t border-border pt-6" data-testid="footer-navigation">
+        <div className="flex items-center justify-between border-t border-border pt-6" data-testid="footer-navigation">
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/choose-plan">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
           <Button
             data-testid="continue-btn"
             onClick={handleContinue}

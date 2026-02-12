@@ -80,8 +80,8 @@ export function OnboardingLayout({ steps, currentStep, totalSteps, children }: O
 }
 
 export function getOnboardingSteps(activeIndex: number): OnboardingStep[] {
-  const labels = ["Store Details", "Connect Marketplace", "Review & Sync"]
-  const paths = ["/onboarding/store-details", "/onboarding/connect-marketplace", "/onboarding/review"]
+  const labels = ["Choose Plan", "Store Details", "Connect Marketplace", "Review & Sync"]
+  const paths = ["/onboarding/choose-plan", "/onboarding/store-details", "/onboarding/connect-marketplace", "/onboarding/review"]
   return labels.map((label, i) => ({
     label,
     path: paths[i],
