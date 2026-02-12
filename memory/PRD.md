@@ -45,6 +45,10 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] **Shared OnboardingLayout** component with progress indicator
 - [x] Testing: 100% pass rate on all onboarding pages (31/31 tests passed)
 
+- [x] **Choose Plan onboarding step** (`/onboarding/choose-plan`) — 4 plan cards (Free/Silver/Gold/Platinum) in 2x2 grid, "Most Popular" badge on Gold, selection highlighting with checkmark, disabled Continue until plan selected, Compare Plans modal with 10-feature comparison table, helper text
+- [x] **Updated onboarding flow** to 4 steps: Choose Plan → Store Details → Connect Marketplace → Review & Sync. All step counters, progress bars, and navigation updated accordingly
+- [x] **Review page plan summary** — shows selected plan badge (Gold) with monthly price ($79/month) and "Change" link back to Choose Plan
+- [x] Testing: 100% pass rate on Choose Plan + updated flow (29/29 tests passed)
 - [x] **Products Page with Progressive Sync Availability** (`/products`) — marketplace sync status banner with progress bar, marketplace filter dropdown with inline sync statuses (Synced/Syncing/Pending), product table showing only synced marketplace products, skeleton placeholder states for non-synced marketplaces, toast notifications when sync completes (Meesho at 8s, Wish at 15s), sidebar "Syncing" badge, product actions (View/Edit/Publish toggle), search by name/SKU, "All synced" completion state
 - [x] Testing: 100% pass rate on Products page (43/43 tests passed)
 
