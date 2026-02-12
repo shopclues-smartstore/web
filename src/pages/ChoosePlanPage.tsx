@@ -207,11 +207,11 @@ export function ChoosePlanPage() {
           </button>
 
           {/* Cards Track */}
-          <div className="overflow-hidden px-8">
+          <div className="overflow-hidden">
             <div
-              className="flex transition-transform duration-500 ease-out"
+              className="flex transition-transform duration-500 ease-out items-center py-6"
               style={{
-                transform: `translateX(calc(-${selectedIndex * 100}% / 3 + 33.333% / 3 * 2 - ${selectedIndex * 16}px + 10.666px))`,
+                transform: `translateX(calc(33.333% - ${selectedIndex * 33.333}%))`,
               }}
               data-testid="plan-grid"
             >
