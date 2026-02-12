@@ -119,7 +119,7 @@ export function ConnectMarketplacePage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(1)} currentStep={2} totalSteps={3}>
+    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={4}>
       <div data-testid="connect-marketplace-page">
         {/* Title */}
         <div className="flex items-start gap-4 mb-8">
