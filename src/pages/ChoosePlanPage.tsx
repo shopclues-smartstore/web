@@ -140,7 +140,25 @@ export function ChoosePlanPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={4} wide>
+    <OnboardingLayout
+      steps={getOnboardingSteps(0)}
+      currentStep={1}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <div />
+          <Button
+            data-testid="continue-btn"
+            onClick={handleContinue}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            Continue with {selectedPlan.name}
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
+        </>
+      }
+    >
       <div data-testid="choose-plan-page">
         {/* Title */}
         <div className="text-center mb-10">
@@ -292,16 +310,6 @@ export function ChoosePlanPage() {
           </p>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end border-t border-border pt-6" data-testid="footer-navigation">
-          <Button
-            data-testid="continue-btn"
-            onClick={handleContinue}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            Continue with {selectedPlan.name}
-            <ArrowRight className="size-4 ml-2" />
-          </Button>
         </div>
       </div>
 
