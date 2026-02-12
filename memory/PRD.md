@@ -45,7 +45,7 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] **Shared OnboardingLayout** component with progress indicator
 - [x] Testing: 100% pass rate on all onboarding pages (31/31 tests passed)
 
-- [x] **Choose Plan onboarding step** (`/onboarding/choose-plan`) — 4 plan cards (Free/Silver/Gold/Platinum) in 2x2 grid, "Most Popular" badge on Gold, selection highlighting with checkmark, disabled Continue until plan selected, Compare Plans modal with 10-feature comparison table, helper text
+- [x] **Choose Plan onboarding step** (`/onboarding/choose-plan`) — **Interactive carousel-style layout**: selected plan slides to center with gradient border & elevated shadow, side cards scale down. 4 plans (Free/Silver/Gold/Platinum) with unique gradient colors, plan selector pills, prev/next arrows, "Best Deal" badge on Gold, "+2 months free" highlight, gradient CTA, selected plan confirmation pill, Compare Plans modal with 10-feature table. OnboardingLayout supports `wide` prop for this page.
 - [x] **Updated onboarding flow** to 4 steps: Choose Plan → Store Details → Connect Marketplace → Review & Sync. All step counters, progress bars, and navigation updated accordingly
 - [x] **Review page plan summary** — shows selected plan badge (Gold) with monthly price ($79/month) and "Change" link back to Choose Plan
 - [x] Testing: 100% pass rate on Choose Plan + updated flow (29/29 tests passed)
