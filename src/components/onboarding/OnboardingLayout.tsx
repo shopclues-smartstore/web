@@ -13,10 +13,11 @@ interface OnboardingLayoutProps {
   steps: OnboardingStep[]
   currentStep: number
   totalSteps: number
+  wide?: boolean
   children: React.ReactNode
 }
 
-export function OnboardingLayout({ steps, currentStep, totalSteps, children }: OnboardingLayoutProps) {
+export function OnboardingLayout({ steps, currentStep, totalSteps, wide, children }: OnboardingLayoutProps) {
   return (
     <div className="min-h-screen bg-background" data-testid="onboarding-layout">
       {/* Top bar */}
@@ -72,7 +73,7 @@ export function OnboardingLayout({ steps, currentStep, totalSteps, children }: O
       </div>
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-6 py-10 animate-fade-up">
+      <div className={cn("mx-auto px-6 py-10 animate-fade-up", wide ? "max-w-5xl" : "max-w-3xl")}>
         {children}
       </div>
     </div>
