@@ -310,7 +310,6 @@ export function ChoosePlanPage() {
           </p>
         </div>
 
-        </div>
       </div>
 
       {/* Compare Plans Modal */}
