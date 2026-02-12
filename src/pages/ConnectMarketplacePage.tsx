@@ -194,7 +194,30 @@ export function ConnectMarketplacePage() {
   };
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={4} wide>
+    <OnboardingLayout
+      steps={getOnboardingSteps(2)}
+      currentStep={3}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/store-details">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <Button
+            data-testid="continue-btn"
+            onClick={handleContinue}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            Continue
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
+        </>
+      }
+    >
       <div data-testid="connect-marketplace-page">
         {/* Title */}
         <div className="text-center mb-10">
@@ -448,31 +471,6 @@ export function ConnectMarketplacePage() {
           </div>
         )}
 
-        {/* Footer */}
-        <div
-          className="flex items-center justify-between border-t border-border pt-6"
-          data-testid="footer-navigation"
-        >
-          <Button
-            variant="outline"
-            data-testid="back-btn"
-            className="rounded-lg"
-            asChild
-          >
-            <Link to="/onboarding/store-details">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            data-testid="continue-btn"
-            onClick={handleContinue}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            Continue
-            <ArrowRight className="size-4 ml-2" />
-          </Button>
-        </div>
       </div>
     </OnboardingLayout>
   );
