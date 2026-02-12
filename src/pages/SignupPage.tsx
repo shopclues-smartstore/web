@@ -60,7 +60,7 @@ export function SignupPage() {
   })
 
   const onSubmit = () => {
-    navigate("/onboarding/store-details")
+    navigate("/onboarding/choose-plan")
   }
 
   return (

@@ -9,6 +9,7 @@ import { DashboardPage } from "@/pages/DashboardPage"
 import { PlaceholderPage } from "@/pages/PlaceholderPage"
 import { ProductsPage } from "@/pages/ProductsPage"
 import { AddTeamPage } from "@/pages/AddTeamPage"
+import { ChoosePlanPage } from "@/pages/ChoosePlanPage"
 import { StoreDetailsPage } from "@/pages/StoreDetailsPage"
 import { ConnectMarketplacePage } from "@/pages/ConnectMarketplacePage"
 import { ReviewPage } from "@/pages/ReviewPage"
@@ -26,6 +27,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Onboarding routes */}
+        <Route path="/onboarding/choose-plan" element={<ChoosePlanPage />} />
         <Route path="/onboarding/store-details" element={<StoreDetailsPage />} />
         <Route path="/onboarding/connect-marketplace" element={<ConnectMarketplacePage />} />
         <Route path="/onboarding/add-team" element={<AddTeamPage />} />
