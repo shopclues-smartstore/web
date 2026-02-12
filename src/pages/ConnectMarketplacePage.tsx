@@ -194,24 +194,19 @@ export function ConnectMarketplacePage() {
   };
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={4}>
+    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={4} wide>
       <div data-testid="connect-marketplace-page">
         {/* Title */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <ShoppingBag className="size-6 text-primary" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <ShoppingBag className="size-7 text-primary" />
           </div>
-          <div>
-            <h1
-              className="font-heading text-2xl font-bold tracking-tight text-foreground"
-              data-testid="connect-marketplace-title"
-            >
-              Connect your marketplaces
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              We'll import your products, inventory, and orders automatically.
-            </p>
-          </div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground" data-testid="connect-marketplace-title">
+            Connect your marketplaces
+          </h1>
+          <p className="text-base text-muted-foreground mt-2 max-w-lg mx-auto">
+            We'll import your products, inventory, and orders automatically.
+          </p>
         </div>
 
         {/* Skip Warning */}
@@ -259,10 +254,7 @@ export function ConnectMarketplacePage() {
         )}
 
         {/* Marketplace Grid */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"
-          data-testid="marketplace-grid"
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 max-w-3xl mx-auto" data-testid="marketplace-grid">
           {marketplaces.map((mp) => (
             <button
               key={mp.id}
@@ -331,7 +323,7 @@ export function ConnectMarketplacePage() {
         {selectedId && selectedMp && selectedMp.status !== "connected" && (
           <div
             data-testid="connection-panel"
-            className="bg-white border border-border rounded-2xl shadow-sm p-6 mb-6 animate-fade-up"
+            className="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 mb-6 animate-fade-up max-w-2xl mx-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-heading text-base font-semibold flex items-center gap-2">
@@ -449,10 +441,7 @@ export function ConnectMarketplacePage() {
 
         {/* Connected summary */}
         {hasAnyConnected && (
-          <div
-            className="flex items-center gap-2 mb-6 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3"
-            data-testid="connected-summary"
-          >
+          <div className="flex items-center gap-2 mb-6 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 max-w-2xl mx-auto" data-testid="connected-summary">
             <CheckCircle2 className="size-4 shrink-0" />
             {marketplaces.filter((m) => m.status === "connected").length}{" "}
             marketplace(s) connected successfully.
