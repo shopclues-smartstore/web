@@ -5,9 +5,14 @@ import {
   CreditCard,
   Check,
   X,
-  Star,
   Info,
   Sparkles,
+  Zap,
+  Crown,
+  Rocket,
+  Gift,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +26,12 @@ interface Plan {
   period: string
   description: string
   popular?: boolean
-  features: { label: string; value: string }[]
+  highlight?: string
+  icon: React.ElementType
+  accentColor: string
+  gradientFrom: string
+  gradientTo: string
+  features: { label: string; value: string; highlighted?: boolean }[]
 }
 
 const plans: Plan[] = [
@@ -30,7 +40,11 @@ const plans: Plan[] = [
     name: "Free",
     price: "$0",
     period: "/month",
-    description: "Get started with the basics.",
+    description: "Get started with the basics and explore the platform.",
+    icon: Gift,
+    accentColor: "text-slate-600",
+    gradientFrom: "from-slate-400",
+    gradientTo: "to-slate-600",
     features: [
       { label: "Products", value: "Up to 50" },
       { label: "Marketplaces", value: "1 marketplace" },
@@ -43,7 +57,11 @@ const plans: Plan[] = [
     name: "Silver",
     price: "$29",
     period: "/month",
-    description: "For growing sellers ready to scale.",
+    description: "For growing sellers ready to scale their business.",
+    icon: Rocket,
+    accentColor: "text-blue-600",
+    gradientFrom: "from-blue-400",
+    gradientTo: "to-cyan-500",
     features: [
       { label: "Products", value: "Up to 500" },
       { label: "Marketplaces", value: "Up to 3" },
@@ -58,9 +76,14 @@ const plans: Plan[] = [
     period: "/month",
     description: "Best value for multi-channel sellers.",
     popular: true,
+    highlight: "+2 months free on annual billing",
+    icon: Crown,
+    accentColor: "text-primary",
+    gradientFrom: "from-primary",
+    gradientTo: "to-cyan-400",
     features: [
-      { label: "Products", value: "Up to 5,000" },
-      { label: "Marketplaces", value: "Up to 10" },
+      { label: "Products", value: "Up to 5,000", highlighted: true },
+      { label: "Marketplaces", value: "Up to 10", highlighted: true },
       { label: "Order sync", value: "Real-time sync" },
       { label: "Support", value: "Priority support" },
     ],
@@ -70,7 +93,11 @@ const plans: Plan[] = [
     name: "Platinum",
     price: "$199",
     period: "/month",
-    description: "For high-volume enterprise sellers.",
+    description: "For high-volume enterprise sellers with advanced needs.",
+    icon: Zap,
+    accentColor: "text-violet-600",
+    gradientFrom: "from-violet-500",
+    gradientTo: "to-purple-600",
     features: [
       { label: "Products", value: "Unlimited" },
       { label: "Marketplaces", value: "Unlimited" },
@@ -95,120 +122,184 @@ const comparisonFeatures = [
 
 export function ChoosePlanPage() {
   const navigate = useNavigate()
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState(2) // Gold by default
   const [compareOpen, setCompareOpen] = useState(false)
+
+  const selectedPlan = plans[selectedIndex]
 
   const handleContinue = () => {
     navigate("/onboarding/store-details")
+  }
+
+  const handlePrev = () => {
+    setSelectedIndex((i) => Math.max(0, i - 1))
+  }
+
+  const handleNext = () => {
+    setSelectedIndex((i) => Math.min(plans.length - 1, i + 1))
   }
 
   return (
     <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={4}>
       <div data-testid="choose-plan-page">
         {/* Title */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <CreditCard className="size-6 text-primary" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <CreditCard className="size-7 text-primary" />
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="choose-plan-title">
-              Choose your plan
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Start small and upgrade anytime.
-            </p>
+          <h1
+            className="font-heading text-3xl font-bold tracking-tight text-foreground"
+            data-testid="choose-plan-title"
+          >
+            Choose your plan
+          </h1>
+          <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
+            Clear pricing. No strings attached. Start small and upgrade anytime.
+          </p>
+        </div>
+
+        {/* Plan Selector Pills */}
+        <div className="flex items-center justify-center gap-2 mb-8" data-testid="plan-pills">
+          {plans.map((plan, i) => (
+            <button
+              key={plan.id}
+              data-testid={`plan-pill-${plan.id}`}
+              onClick={() => setSelectedIndex(i)}
+              className={cn(
+                "relative rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300",
+                selectedIndex === i
+                  ? "bg-foreground text-background shadow-lg"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
+            >
+              {plan.name}
+              {plan.popular && selectedIndex !== i && (
+                <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary animate-pulse" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Carousel Container */}
+        <div className="relative mb-8" data-testid="plan-carousel">
+          {/* Nav Arrows */}
+          <button
+            data-testid="carousel-prev"
+            onClick={handlePrev}
+            disabled={selectedIndex === 0}
+            className={cn(
+              "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 size-10 rounded-full bg-white border border-border shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl hover:scale-105",
+              selectedIndex === 0 && "opacity-30 cursor-not-allowed hover:scale-100"
+            )}
+          >
+            <ChevronLeft className="size-5 text-foreground" />
+          </button>
+          <button
+            data-testid="carousel-next"
+            onClick={handleNext}
+            disabled={selectedIndex === plans.length - 1}
+            className={cn(
+              "absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 size-10 rounded-full bg-white border border-border shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl hover:scale-105",
+              selectedIndex === plans.length - 1 && "opacity-30 cursor-not-allowed hover:scale-100"
+            )}
+          >
+            <ChevronRightIcon className="size-5 text-foreground" />
+          </button>
+
+          {/* Cards Track */}
+          <div className="overflow-hidden px-8">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{
+                transform: `translateX(calc(-${selectedIndex * 100}% / 3 + 33.333% / 3 * 2 - ${selectedIndex * 16}px + 10.666px))`,
+              }}
+              data-testid="plan-grid"
+            >
+              {plans.map((plan, i) => {
+                const isCenter = i === selectedIndex
+                const offset = i - selectedIndex
+                const isAdjacent = Math.abs(offset) === 1
+                const isFar = Math.abs(offset) >= 2
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="shrink-0 px-2 transition-all duration-500 ease-out"
+                    style={{
+                      width: "calc(100% / 3)",
+                      transform: isCenter
+                        ? "scale(1)"
+                        : isAdjacent
+                        ? "scale(0.92)"
+                        : "scale(0.85)",
+                      opacity: isFar ? 0.5 : 1,
+                    }}
+                  >
+                    <button
+                      data-testid={`plan-card-${plan.id}`}
+                      onClick={() => setSelectedIndex(i)}
+                      className={cn(
+                        "relative w-full flex flex-col rounded-2xl text-left transition-all duration-500 overflow-hidden",
+                        isCenter
+                          ? "shadow-2xl z-10"
+                          : "shadow-sm hover:shadow-md z-0"
+                      )}
+                    >
+                      {/* Gradient border wrapper for center card */}
+                      {isCenter ? (
+                        <div className={cn("p-[2px] rounded-2xl bg-gradient-to-br", plan.gradientFrom, plan.gradientTo)}>
+                          <div className="bg-white rounded-[14px] p-6 flex flex-col min-h-[380px]">
+                            <CenterCardContent plan={plan} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border border-border bg-white rounded-2xl p-6 flex flex-col min-h-[380px] hover:border-primary/20 transition-colors duration-300">
+                          <SideCardContent plan={plan} />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Plan Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" data-testid="plan-grid">
-          {plans.map((plan) => {
-            const isSelected = selectedPlan === plan.id
-            return (
-              <button
-                key={plan.id}
-                data-testid={`plan-card-${plan.id}`}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={cn(
-                  "relative flex flex-col rounded-2xl border p-5 text-left transition-all duration-200",
-                  isSelected
-                    ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20"
-                    : "border-border bg-white hover:border-primary/30 hover:shadow-sm",
-                  plan.popular && !isSelected && "border-primary/30"
-                )}
-              >
-                {/* Popular badge */}
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2" data-testid="popular-badge">
-                    <Badge className="bg-primary text-primary-foreground shadow-sm px-3 gap-1">
-                      <Sparkles className="size-3" />
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-heading text-lg font-semibold text-foreground">{plan.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
-                  </div>
-                  {/* Selection indicator */}
-                  <div className={cn(
-                    "size-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-200",
-                    isSelected ? "border-primary bg-primary" : "border-border"
-                  )}>
-                    {isSelected && <Check className="size-3 text-primary-foreground" />}
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="flex items-baseline gap-0.5 mb-4">
-                  <span className="font-heading text-3xl font-bold tracking-tight text-foreground">{plan.price}</span>
-                  <span className="text-sm text-muted-foreground">{plan.period}</span>
-                </div>
-
-                {/* Features */}
-                <div className="space-y-2.5">
-                  {plan.features.map((feat) => (
-                    <div key={feat.label} className="flex items-center gap-2 text-sm">
-                      <Check className="size-3.5 text-emerald-500 shrink-0" />
-                      <span className="text-muted-foreground">{feat.label}:</span>
-                      <span className="font-medium text-foreground">{feat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </button>
-            )
-          })}
+        {/* Selected plan confirmation */}
+        <div className="text-center mb-6" data-testid="selected-confirmation">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 transition-all duration-300">
+            <Check className="size-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              <span className="text-primary font-semibold">{selectedPlan.name}</span> plan selected
+              <span className="text-muted-foreground"> — {selectedPlan.price}{selectedPlan.period}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Compare plans link */}
-        <div className="text-center mb-6">
+        {/* Compare + Helper */}
+        <div className="text-center mb-8 space-y-2">
           <button
             data-testid="compare-plans-btn"
             onClick={() => setCompareOpen(true)}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 hover:gap-2"
           >
-            Compare plans
-            <ArrowRight className="size-3" />
+            Compare all plans in detail
+            <ArrowRight className="size-3 transition-all duration-200" />
           </button>
+          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+            <Info className="size-3" />
+            You can change your plan later from Settings.
+          </p>
         </div>
-
-        {/* Helper text */}
-        <p className="text-xs text-muted-foreground text-center mb-8 flex items-center justify-center gap-1">
-          <Info className="size-3" />
-          You can change your plan later from Settings.
-        </p>
 
         {/* Footer */}
         <div className="flex items-center justify-end border-t border-border pt-6" data-testid="footer-navigation">
           <Button
             data-testid="continue-btn"
             onClick={handleContinue}
-            disabled={!selectedPlan}
             className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
           >
-            Continue
+            Continue with {selectedPlan.name}
             <ArrowRight className="size-4 ml-2" />
           </Button>
         </div>
@@ -222,7 +313,6 @@ export function ChoosePlanPage() {
             data-testid="compare-modal"
             className="relative bg-white rounded-2xl shadow-xl border border-border w-full max-w-3xl max-h-[80vh] overflow-hidden animate-fade-up"
           >
-            {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h2 className="font-heading text-lg font-semibold">Compare Plans</h2>
               <button
@@ -233,8 +323,6 @@ export function ChoosePlanPage() {
                 <X className="size-5" />
               </button>
             </div>
-
-            {/* Modal body */}
             <div className="overflow-auto max-h-[calc(80vh-60px)]">
               <table className="w-full text-sm" data-testid="compare-table">
                 <thead>
@@ -278,5 +366,119 @@ export function ChoosePlanPage() {
         </div>
       )}
     </OnboardingLayout>
+  )
+}
+
+/* ============================================
+   Center Card Content - the "hero" selected card
+   ============================================ */
+function CenterCardContent({ plan }: { plan: Plan }) {
+  const Icon = plan.icon
+  return (
+    <>
+      {/* Badge */}
+      {plan.popular && (
+        <div className="flex justify-center -mt-1 mb-3" data-testid="popular-badge">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-cyan-500 text-white text-xs font-semibold px-3.5 py-1 shadow-md">
+            <Sparkles className="size-3" />
+            Best Deal
+          </span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <div className={cn("size-10 rounded-xl bg-gradient-to-br flex items-center justify-center", plan.gradientFrom, plan.gradientTo)}>
+          <Icon className="size-5 text-white" />
+        </div>
+        <div>
+          <h3 className="font-heading text-xl font-bold text-foreground">{plan.name}</h3>
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+
+      {/* Price - big emphasis */}
+      <div className="flex items-baseline gap-1 mb-2">
+        <span className="font-heading text-5xl font-bold tracking-tight text-foreground">{plan.price}</span>
+        <span className="text-base text-muted-foreground font-medium">{plan.period}</span>
+      </div>
+
+      {/* Highlight text */}
+      {plan.highlight && (
+        <div className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 mb-4">
+          <Sparkles className="size-3" />
+          {plan.highlight}
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="h-px bg-border my-3" />
+
+      {/* Features */}
+      <div className="space-y-3 flex-1">
+        {plan.features.map((feat) => (
+          <div key={feat.label} className="flex items-center gap-2.5 text-sm">
+            <div className={cn("size-5 rounded-full flex items-center justify-center shrink-0", feat.highlighted ? "bg-primary/10" : "bg-emerald-50")}>
+              <Check className={cn("size-3", feat.highlighted ? "text-primary" : "text-emerald-500")} />
+            </div>
+            <span className="text-muted-foreground">{feat.label}:</span>
+            <span className={cn("font-semibold", feat.highlighted ? "text-primary" : "text-foreground")}>{feat.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className={cn("mt-5 w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white bg-gradient-to-r shadow-lg transition-all duration-300 hover:shadow-xl hover:brightness-110", plan.gradientFrom, plan.gradientTo)}>
+        Selected Plan
+      </div>
+    </>
+  )
+}
+
+/* ============================================
+   Side Card Content - non-selected cards
+   ============================================ */
+function SideCardContent({ plan }: { plan: Plan }) {
+  const Icon = plan.icon
+  return (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2.5">
+          <div className={cn("size-9 rounded-lg bg-muted flex items-center justify-center")}>
+            <Icon className="size-4 text-muted-foreground" />
+          </div>
+          <h3 className="font-heading text-lg font-semibold text-foreground">{plan.name}</h3>
+        </div>
+        {plan.popular && (
+          <span className="text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+            Popular
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">{plan.description}</p>
+
+      {/* Price */}
+      <div className="flex items-baseline gap-0.5 mb-4">
+        <span className="font-heading text-3xl font-bold tracking-tight text-foreground">{plan.price}</span>
+        <span className="text-sm text-muted-foreground">{plan.period}</span>
+      </div>
+
+      {/* Features */}
+      <div className="space-y-2.5 flex-1">
+        {plan.features.map((feat) => (
+          <div key={feat.label} className="flex items-center gap-2 text-sm">
+            <Check className="size-3.5 text-emerald-500 shrink-0" />
+            <span className="text-muted-foreground">{feat.label}:</span>
+            <span className="font-medium text-foreground">{feat.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="mt-5 w-full rounded-xl border border-border py-2.5 text-center text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-primary/30 hover:text-foreground">
+        Select Plan
+      </div>
+    </>
   )
 }
