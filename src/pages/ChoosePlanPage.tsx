@@ -308,51 +308,94 @@ export function ChoosePlanPage() {
       {/* Compare Plans Modal */}
       {compareOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-testid="compare-modal-overlay">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setCompareOpen(false)} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCompareOpen(false)} />
           <div
             data-testid="compare-modal"
-            className="relative bg-white rounded-2xl shadow-xl border border-border w-full max-w-3xl max-h-[80vh] overflow-hidden animate-fade-up"
+            className="relative bg-white rounded-2xl shadow-2xl border border-border w-full max-w-4xl max-h-[85vh] overflow-hidden animate-fade-up"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-heading text-lg font-semibold">Compare Plans</h2>
-              <button
-                data-testid="close-compare-modal"
-                onClick={() => setCompareOpen(false)}
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <X className="size-5" />
-              </button>
+            {/* Modal header with gradient */}
+            <div className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-cyan-500/5 to-violet-500/5" />
+              <div className="relative flex items-center justify-between px-8 py-5">
+                <div>
+                  <h2 className="font-heading text-xl font-bold text-foreground">Compare Plans</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">Find the perfect fit for your business</p>
+                </div>
+                <button
+                  data-testid="close-compare-modal"
+                  onClick={() => setCompareOpen(false)}
+                  className="rounded-xl p-2 text-muted-foreground hover:bg-white/80 hover:text-foreground transition-all duration-200 hover:shadow-sm"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
             </div>
-            <div className="overflow-auto max-h-[calc(80vh-60px)]">
+
+            {/* Modal body */}
+            <div className="overflow-auto max-h-[calc(85vh-90px)]">
               <table className="w-full text-sm" data-testid="compare-table">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left px-5 py-3 font-medium text-muted-foreground w-[180px]">Feature</th>
-                    <th className="text-center px-3 py-3 font-semibold text-foreground">Free</th>
-                    <th className="text-center px-3 py-3 font-semibold text-foreground">Silver</th>
-                    <th className="text-center px-3 py-3 font-semibold text-foreground relative">
-                      Gold
-                      <Badge className="absolute -top-1 left-1/2 -translate-x-1/2 text-[9px] bg-primary text-primary-foreground px-1.5">Popular</Badge>
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-foreground">Platinum</th>
+                  <tr className="border-b border-border sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+                    <th className="text-left px-8 py-4 font-medium text-muted-foreground w-[200px]">Feature</th>
+                    {(["Free", "Silver", "Gold", "Platinum"] as const).map((name, i) => {
+                      const prices = ["$0", "$29", "$79", "$199"]
+                      const isGold = name === "Gold"
+                      const gradients = ["from-slate-400 to-slate-600", "from-blue-400 to-cyan-500", "from-primary to-cyan-400", "from-violet-500 to-purple-600"]
+                      return (
+                        <th key={name} className={cn("text-center px-4 py-4 relative", isGold && "bg-primary/[0.03]")}>
+                          {isGold && (
+                            <div className="absolute -top-0 left-1/2 -translate-x-1/2">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-gradient-to-r from-primary to-cyan-500 rounded-b-lg px-3 py-0.5 shadow-sm">
+                                <Sparkles className="size-2.5" />
+                                BEST VALUE
+                              </span>
+                            </div>
+                          )}
+                          <div className={cn("inline-flex items-center justify-center size-8 rounded-lg bg-gradient-to-br text-white mb-1.5", gradients[i])}>
+                            {[Gift, Rocket, Crown, Zap][i] && (() => {
+                              const Icon = [Gift, Rocket, Crown, Zap][i]
+                              return <Icon className="size-4" />
+                            })()}
+                          </div>
+                          <div className="font-heading text-sm font-bold text-foreground">{name}</div>
+                          <div className="text-xs text-muted-foreground font-normal mt-0.5">{prices[i]}/mo</div>
+                        </th>
+                      )
+                    })}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {comparisonFeatures.map((feat) => (
-                    <tr key={feat.name} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-5 py-3 font-medium text-foreground">{feat.name}</td>
+                <tbody>
+                  {comparisonFeatures.map((feat, fi) => (
+                    <tr
+                      key={feat.name}
+                      className={cn(
+                        "border-b border-border/60 transition-colors hover:bg-muted/30",
+                        fi % 2 === 0 && "bg-muted/10"
+                      )}
+                    >
+                      <td className="px-8 py-3.5 font-medium text-foreground">{feat.name}</td>
                       {(["free", "silver", "gold", "platinum"] as const).map((planKey) => {
                         const val = feat[planKey]
+                        const isGoldCol = planKey === "gold"
                         return (
-                          <td key={planKey} className="text-center px-3 py-3">
+                          <td key={planKey} className={cn("text-center px-4 py-3.5", isGoldCol && "bg-primary/[0.03]")}>
                             {typeof val === "boolean" ? (
                               val ? (
-                                <Check className="size-4 text-emerald-500 mx-auto" />
+                                <div className="inline-flex items-center justify-center size-6 rounded-full bg-emerald-50">
+                                  <Check className="size-3.5 text-emerald-600" />
+                                </div>
                               ) : (
-                                <X className="size-4 text-muted-foreground/40 mx-auto" />
+                                <div className="inline-flex items-center justify-center size-6 rounded-full bg-muted/50">
+                                  <X className="size-3.5 text-muted-foreground/30" />
+                                </div>
                               )
                             ) : (
-                              <span className="text-muted-foreground">{val}</span>
+                              <span className={cn(
+                                "text-sm",
+                                isGoldCol ? "font-semibold text-primary" : "text-muted-foreground"
+                              )}>
+                                {val}
+                              </span>
                             )}
                           </td>
                         )
@@ -361,6 +404,23 @@ export function ChoosePlanPage() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Bottom CTA area */}
+              <div className="px-8 py-6 border-t border-border bg-gradient-to-r from-muted/30 via-transparent to-muted/30">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Not sure yet? Start with <span className="font-medium text-foreground">Free</span> and upgrade anytime.
+                  </p>
+                  <Button
+                    data-testid="modal-close-btn"
+                    onClick={() => setCompareOpen(false)}
+                    className="rounded-lg shadow-sm"
+                  >
+                    Choose a plan
+                    <ArrowRight className="size-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
