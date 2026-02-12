@@ -50,22 +50,22 @@ export function ReviewPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(3)} currentStep={4} totalSteps={4}>
+    <OnboardingLayout steps={getOnboardingSteps(3)} currentStep={4} totalSteps={4} wide>
       <div data-testid="review-page">
         {/* Title */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Rocket className="size-6 text-primary" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Rocket className="size-7 text-primary" />
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="review-title">
-              Review & start syncing
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Confirm your setup and we'll start importing your data.
-            </p>
-          </div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground" data-testid="review-title">
+            Review & start syncing
+          </h1>
+          <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
+            Confirm your setup and we'll start importing your data.
+          </p>
         </div>
+
+        <div className="max-w-2xl mx-auto">
 
         {/* Plan Summary */}
         <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden mb-4" data-testid="plan-summary-card">
@@ -206,6 +206,7 @@ export function ReviewPage() {
             </p>
           </div>
         </div>
+        </div> {/* end max-w-2xl */}
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border pt-6" data-testid="footer-navigation">
