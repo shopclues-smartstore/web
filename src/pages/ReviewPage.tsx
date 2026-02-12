@@ -67,6 +67,31 @@ export function ReviewPage() {
           </div>
         </div>
 
+        {/* Plan Summary */}
+        <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden mb-4" data-testid="plan-summary-card">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <CreditCard className="size-4 text-muted-foreground" />
+              <h3 className="font-heading text-sm font-semibold">Selected Plan</h3>
+            </div>
+            <Button variant="ghost" size="sm" data-testid="edit-plan-btn" className="text-xs text-primary" asChild>
+              <Link to="/onboarding/choose-plan">
+                <Pencil className="size-3 mr-1" />
+                Change
+              </Link>
+            </Button>
+          </div>
+          <div className="px-6 py-4 flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary text-primary-foreground gap-1" data-testid="review-plan-badge">
+                <Sparkles className="size-3" />
+                {mockSelectedPlan.name}
+              </Badge>
+              <span className="text-sm font-medium text-foreground tabular-nums" data-testid="review-plan-price">{mockSelectedPlan.price}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Store Details Summary */}
         <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden mb-4" data-testid="store-summary-card">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
