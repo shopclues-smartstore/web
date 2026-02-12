@@ -50,7 +50,30 @@ export function ReviewPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(3)} currentStep={4} totalSteps={4} wide>
+    <OnboardingLayout
+      steps={getOnboardingSteps(3)}
+      currentStep={4}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/connect-marketplace">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <Button
+            data-testid="start-sync-btn"
+            onClick={handleStartSync}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <Rocket className="size-4 mr-2" />
+            Start Sync
+          </Button>
+        </>
+      }
+    >
       <div data-testid="review-page">
         {/* Title */}
         <div className="text-center mb-10">
@@ -207,24 +230,6 @@ export function ReviewPage() {
           </div>
         </div>
         </div> {/* end max-w-2xl */}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border pt-6" data-testid="footer-navigation">
-          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
-            <Link to="/onboarding/connect-marketplace">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            data-testid="start-sync-btn"
-            onClick={handleStartSync}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            <Rocket className="size-4 mr-2" />
-            Start Sync
-          </Button>
-        </div>
       </div>
     </OnboardingLayout>
   )
