@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import {
+  ArrowLeft,
   ArrowRight,
   Building2,
   ChevronDown,
@@ -64,25 +65,47 @@ export function StoreDetailsPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={3}>
+    <OnboardingLayout
+      steps={getOnboardingSteps(1)}
+      currentStep={2}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/choose-plan">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <Button
+            data-testid="continue-btn"
+            onClick={handleContinue}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            Continue
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
+        </>
+      }
+    >
       <div data-testid="store-details-page">
         {/* Title */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Building2 className="size-6 text-primary" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Building2 className="size-7 text-primary" />
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="store-details-title">
-              Tell us about your store
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              This helps us set things up correctly for you.
-            </p>
-          </div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground" data-testid="store-details-title">
+            Tell us about your store
+          </h1>
+          <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
+            This helps us set things up correctly for you.
+          </p>
         </div>
 
         {/* Main Form Card */}
-        <div className="bg-white border border-border rounded-2xl shadow-sm p-6 mb-6" data-testid="store-form-card">
+        <div className="max-w-2xl mx-auto">
+        <div className="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 mb-6" data-testid="store-form-card">
           <div className="space-y-5">
             {/* Store Name */}
             <div className="space-y-2">
@@ -200,7 +223,7 @@ export function StoreDetailsPage() {
           <button
             data-testid="optional-toggle"
             onClick={() => setOptionalOpen(!optionalOpen)}
-            className="flex w-full items-center justify-between px-6 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
+            className="flex w-full items-center justify-between px-6 sm:px-8 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
           >
             <span className="flex items-center gap-2">
               <Info className="size-4 text-muted-foreground" />
@@ -209,7 +232,7 @@ export function StoreDetailsPage() {
             {optionalOpen ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
           </button>
           {optionalOpen && (
-            <div className="px-6 pb-5 pt-0 space-y-5 border-t border-border animate-fade-up" data-testid="optional-fields">
+            <div className="px-6 sm:px-8 pb-5 pt-0 space-y-5 border-t border-border animate-fade-up" data-testid="optional-fields">
               {/* Business Type */}
               <div className="space-y-2 pt-4">
                 <Label>Business Type</Label>
@@ -253,18 +276,7 @@ export function StoreDetailsPage() {
           <Info className="size-3" />
           You can change these later from Settings.
         </p>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end border-t border-border pt-6" data-testid="footer-navigation">
-          <Button
-            data-testid="continue-btn"
-            onClick={handleContinue}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            Continue
-            <ArrowRight className="size-4 ml-2" />
-          </Button>
-        </div>
+        </div> {/* end max-w-2xl */}
       </div>
     </OnboardingLayout>
   )

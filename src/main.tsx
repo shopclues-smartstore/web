@@ -1,27 +1,33 @@
-import "./index.css";
+import './index.css';
 
-import { StrictMode } from "react";
+import { StrictMode } from 'react';
 
-import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { Toaster } from "sonner";
+import { createRoot } from 'react-dom/client';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+} from 'react-router-dom';
+import { Toaster } from 'sonner';
 
-import { AppShell } from "@/components/layout/AppShell";
-import { AuthCallbackPage } from "@/features/auth/callback/AuthCallbackPage";
-import { GraphQLProvider } from "@/lib/graphql/provider";
-import { AddTeamPage } from "@/pages/AddTeamPage";
-import { ConnectMarketplacePage } from "@/pages/ConnectMarketplacePage";
-import { DashboardPage } from "@/pages/DashboardPage";
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
-import { LoginPage } from "@/pages/LoginPage";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
-import { ProductsPage } from "@/pages/ProductsPage";
-import { ReviewPage } from "@/pages/ReviewPage";
-import { SignupPage } from "@/pages/SignupPage";
-import { StoreDetailsPage } from "@/pages/StoreDetailsPage";
-import { SyncingPage } from "@/pages/SyncingPage";
-import { GuestOnly } from "@/routes/GuestOnly";
-import { RequireAuth } from "@/routes/RequireAuth";
+import { AppShell } from '@/components/layout/AppShell';
+import { AuthCallbackPage } from '@/features/auth/callback/AuthCallbackPage';
+import { GraphQLProvider } from '@/lib/graphql/provider';
+import { AddTeamPage } from '@/pages/AddTeamPage';
+import { ChoosePlanPage } from '@/pages/ChoosePlanPage';
+import { ConnectMarketplacePage } from '@/pages/ConnectMarketplacePage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { PlaceholderPage } from '@/pages/PlaceholderPage';
+import { ProductsPage } from '@/pages/ProductsPage';
+import { ReviewPage } from '@/pages/ReviewPage';
+import { SignupPage } from '@/pages/SignupPage';
+import { StoreDetailsPage } from '@/pages/StoreDetailsPage';
+import { SyncingPage } from '@/pages/SyncingPage';
+import { GuestOnly } from '@/routes/GuestOnly';
+import { RequireAuth } from '@/routes/RequireAuth';
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -41,14 +47,9 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* Onboarding routes */}
-          <Route
-            path="/onboarding/store-details"
-            element={<StoreDetailsPage />}
-          />
-          <Route
-            path="/onboarding/connect-marketplace"
-            element={<ConnectMarketplacePage />}
-          />
+          <Route path="/onboarding/choose-plan" element={<ChoosePlanPage />} />
+          <Route path="/onboarding/store-details" element={<StoreDetailsPage />} />
+          <Route path="/onboarding/connect-marketplace" element={<ConnectMarketplacePage />} />
           <Route path="/onboarding/add-team" element={<AddTeamPage />} />
           <Route path="/onboarding/review" element={<ReviewPage />} />
           <Route path="/onboarding/syncing" element={<SyncingPage />} />

@@ -1,14 +1,28 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Chrome, Eye, EyeOff, Facebook, Mail, ShoppingBag, Store } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { signup, getOAuthStartUrl, type OAuthProvider } from "@/features/auth"
-import { toast } from "sonner"
+import { useState } from 'react';
+
+import {
+  Chrome,
+  Eye,
+  EyeOff,
+  Facebook,
+  Mail,
+  ShoppingBag,
+  Store,
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  getOAuthStartUrl,
+  type OAuthProvider,
+  signup,
+} from '@/features/auth';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const signupSchema = z.object({
   fullName: z.string().min(1, "Full name is required").max(255),

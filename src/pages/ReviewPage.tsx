@@ -10,10 +10,18 @@ import {
   CheckCircle2,
   Pencil,
   Info,
+  CreditCard,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OnboardingLayout, getOnboardingSteps } from "@/components/onboarding/OnboardingLayout"
+
+const mockSelectedPlan = {
+  name: "Gold",
+  price: "$79/month",
+  popular: true,
+}
 
 const mockStoreDetails = {
   name: "My Electronics Store",
@@ -42,20 +50,68 @@ export function ReviewPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={3}>
+    <OnboardingLayout
+      steps={getOnboardingSteps(3)}
+      currentStep={4}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/connect-marketplace">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <Button
+            data-testid="start-sync-btn"
+            onClick={handleStartSync}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <Rocket className="size-4 mr-2" />
+            Start Sync
+          </Button>
+        </>
+      }
+    >
       <div data-testid="review-page">
         {/* Title */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Rocket className="size-6 text-primary" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Rocket className="size-7 text-primary" />
           </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="review-title">
-              Review & start syncing
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Confirm your setup and we'll start importing your data.
-            </p>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground" data-testid="review-title">
+            Review & start syncing
+          </h1>
+          <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
+            Confirm your setup and we'll start importing your data.
+          </p>
+        </div>
+
+        <div className="max-w-2xl mx-auto">
+
+        {/* Plan Summary */}
+        <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden mb-4" data-testid="plan-summary-card">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <CreditCard className="size-4 text-muted-foreground" />
+              <h3 className="font-heading text-sm font-semibold">Selected Plan</h3>
+            </div>
+            <Button variant="ghost" size="sm" data-testid="edit-plan-btn" className="text-xs text-primary" asChild>
+              <Link to="/onboarding/choose-plan">
+                <Pencil className="size-3 mr-1" />
+                Change
+              </Link>
+            </Button>
+          </div>
+          <div className="px-6 py-4 flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary text-primary-foreground gap-1" data-testid="review-plan-badge">
+                <Sparkles className="size-3" />
+                {mockSelectedPlan.name}
+              </Badge>
+              <span className="text-sm font-medium text-foreground tabular-nums" data-testid="review-plan-price">{mockSelectedPlan.price}</span>
+            </div>
           </div>
         </div>
 
@@ -173,24 +229,7 @@ export function ReviewPage() {
             </p>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border pt-6" data-testid="footer-navigation">
-          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
-            <Link to="/onboarding/connect-marketplace">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            data-testid="start-sync-btn"
-            onClick={handleStartSync}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            <Rocket className="size-4 mr-2" />
-            Start Sync
-          </Button>
-        </div>
+        </div> {/* end max-w-2xl */}
       </div>
     </OnboardingLayout>
   )
