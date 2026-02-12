@@ -65,7 +65,30 @@ export function StoreDetailsPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(1)} currentStep={2} totalSteps={4} wide>
+    <OnboardingLayout
+      steps={getOnboardingSteps(1)}
+      currentStep={2}
+      totalSteps={4}
+      wide
+      footer={
+        <>
+          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+            <Link to="/onboarding/choose-plan">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <Button
+            data-testid="continue-btn"
+            onClick={handleContinue}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            Continue
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
+        </>
+      }
+    >
       <div data-testid="store-details-page">
         {/* Title */}
         <div className="text-center mb-10">
@@ -254,24 +277,6 @@ export function StoreDetailsPage() {
           You can change these later from Settings.
         </p>
         </div> {/* end max-w-2xl */}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border pt-6" data-testid="footer-navigation">
-          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
-            <Link to="/onboarding/choose-plan">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            data-testid="continue-btn"
-            onClick={handleContinue}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            Continue
-            <ArrowRight className="size-4 ml-2" />
-          </Button>
-        </div>
       </div>
     </OnboardingLayout>
   )
