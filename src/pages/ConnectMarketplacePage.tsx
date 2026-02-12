@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 import {
   AlertTriangle,
@@ -10,18 +10,21 @@ import {
   Lock,
   ShoppingBag,
   X,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+} from 'lucide-react';
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
 
 import {
   getOnboardingSteps,
   OnboardingLayout,
-} from "@/components/onboarding/OnboardingLayout";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+} from '@/components/onboarding/OnboardingLayout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
 
@@ -191,11 +194,7 @@ export function ConnectMarketplacePage() {
   };
 
   return (
-    <OnboardingLayout
-      steps={getOnboardingSteps(1)}
-      currentStep={2}
-      totalSteps={3}
-    >
+    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={4}>
       <div data-testid="connect-marketplace-page">
         {/* Title */}
         <div className="flex items-start gap-4 mb-8">

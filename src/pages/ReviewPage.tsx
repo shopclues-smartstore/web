@@ -42,7 +42,7 @@ export function ReviewPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(2)} currentStep={3} totalSteps={3}>
+    <OnboardingLayout steps={getOnboardingSteps(3)} currentStep={4} totalSteps={4}>
       <div data-testid="review-page">
         {/* Title */}
         <div className="flex items-start gap-4 mb-8">
