@@ -10,10 +10,18 @@ import {
   CheckCircle2,
   Pencil,
   Info,
+  CreditCard,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { OnboardingLayout, getOnboardingSteps } from "@/components/onboarding/OnboardingLayout"
+
+const mockSelectedPlan = {
+  name: "Gold",
+  price: "$79/month",
+  popular: true,
+}
 
 const mockStoreDetails = {
   name: "My Electronics Store",
