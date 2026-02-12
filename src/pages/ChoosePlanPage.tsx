@@ -140,7 +140,7 @@ export function ChoosePlanPage() {
   }
 
   return (
-    <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={4}>
+    <OnboardingLayout steps={getOnboardingSteps(0)} currentStep={1} totalSteps={4} wide>
       <div data-testid="choose-plan-page">
         {/* Title */}
         <div className="text-center mb-10">
