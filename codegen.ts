@@ -12,7 +12,11 @@ const config: CodegenConfig = {
       },
     },
   ],
-  documents: ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  documents: [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "src/lib/graphql/operations/**/*.gql",
+  ],
   generates: {
     "./src/lib/graphql/generated/": {
       preset: "client",
@@ -22,19 +26,26 @@ const config: CodegenConfig = {
       },
     },
     "./src/lib/graphql/generated/types.ts": {
-      plugins: ["typescript", "typescript-operations"],
+      plugins: [
+        "typescript",
+        "typescript-operations",
+        "typescript-react-apollo",
+      ],
       config: {
         skipTypename: false,
-        withHooks: true,
         withComponent: false,
         withHOC: false,
         withRefetchFn: true,
         enumsAsTypes: true,
+        gqlImport: "@apollo/client#gql",
+        // Apollo Client 4: hooks and types live in @apollo/client/react
+        apolloReactCommonImportFrom: "@apollo/client/react",
+        apolloReactHooksImportFrom: "@apollo/client/react",
       },
     },
   },
   hooks: {
-    afterAllFileWrite: ["prettier --write"],
+    afterAllFileWrite: ["node scripts/patch-codegen-types.cjs"],
   },
 };
 

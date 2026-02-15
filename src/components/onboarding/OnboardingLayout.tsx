@@ -1,6 +1,10 @@
-import { Link } from "react-router-dom"
-import { Store, Check } from "lucide-react"
-import { cn } from "@/lib/utils"
+import {
+  Check,
+  Store,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { cn } from '@/lib/utils';
 
 export interface OnboardingStep {
   label: string
@@ -99,8 +103,8 @@ export function OnboardingLayout({ steps, currentStep, totalSteps, wide, childre
 }
 
 export function getOnboardingSteps(activeIndex: number): OnboardingStep[] {
-  const labels = ["Choose Plan", "Store Details", "Connect Marketplace", "Review & Sync"]
-  const paths = ["/onboarding/choose-plan", "/onboarding/store-details", "/onboarding/connect-marketplace", "/onboarding/review"]
+  const labels = ["Store Details", "Choose Plan", "Connect Marketplace", "Review & Sync"]
+  const paths = ["/onboarding/store-details", "/onboarding/choose-plan", "/onboarding/connect-marketplace", "/onboarding/review"]
   return labels.map((label, i) => ({
     label,
     path: paths[i],

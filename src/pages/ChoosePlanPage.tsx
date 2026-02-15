@@ -1,37 +1,42 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+
 import {
+  ArrowLeft,
   ArrowRight,
-  CreditCard,
   Check,
-  X,
-  Info,
-  Sparkles,
-  Zap,
-  Crown,
-  Rocket,
-  Gift,
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { OnboardingLayout, getOnboardingSteps } from "@/components/onboarding/OnboardingLayout"
+  CreditCard,
+  Crown,
+  Gift,
+  Info,
+  Rocket,
+  Sparkles,
+  X,
+  Zap,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+
+import {
+  getOnboardingSteps,
+  OnboardingLayout,
+} from "@/components/onboarding/OnboardingLayout";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Plan {
-  id: string
-  name: string
-  price: string
-  period: string
-  description: string
-  popular?: boolean
-  highlight?: string
-  icon: React.ElementType
-  accentColor: string
-  gradientFrom: string
-  gradientTo: string
-  features: { label: string; value: string; highlighted?: boolean }[]
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  popular?: boolean;
+  highlight?: string;
+  icon: React.ElementType;
+  accentColor: string;
+  gradientFrom: string;
+  gradientTo: string;
+  features: { label: string; value: string; highlighted?: boolean }[];
 }
 
 const plans: Plan[] = [
@@ -105,49 +110,119 @@ const plans: Plan[] = [
       { label: "Support", value: "Dedicated manager" },
     ],
   },
-]
+];
 
 const comparisonFeatures = [
-  { name: "Products limit", free: "50", silver: "500", gold: "5,000", platinum: "Unlimited" },
-  { name: "Marketplaces", free: "1", silver: "3", gold: "10", platinum: "Unlimited" },
-  { name: "Order sync", free: "Manual", silver: "Auto", gold: "Real-time", platinum: "Real-time + webhooks" },
-  { name: "Inventory alerts", free: false, silver: true, gold: true, platinum: true },
-  { name: "Pricing rules", free: false, silver: false, gold: true, platinum: true },
-  { name: "Bulk import/export", free: false, silver: true, gold: true, platinum: true },
-  { name: "Analytics & reports", free: "Basic", silver: "Standard", gold: "Advanced", platinum: "Custom" },
-  { name: "API access", free: false, silver: false, gold: true, platinum: true },
-  { name: "Team members", free: "1", silver: "3", gold: "10", platinum: "Unlimited" },
-  { name: "Support", free: "Community", silver: "Email", gold: "Priority", platinum: "Dedicated manager" },
-]
+  {
+    name: "Products limit",
+    free: "50",
+    silver: "500",
+    gold: "5,000",
+    platinum: "Unlimited",
+  },
+  {
+    name: "Marketplaces",
+    free: "1",
+    silver: "3",
+    gold: "10",
+    platinum: "Unlimited",
+  },
+  {
+    name: "Order sync",
+    free: "Manual",
+    silver: "Auto",
+    gold: "Real-time",
+    platinum: "Real-time + webhooks",
+  },
+  {
+    name: "Inventory alerts",
+    free: false,
+    silver: true,
+    gold: true,
+    platinum: true,
+  },
+  {
+    name: "Pricing rules",
+    free: false,
+    silver: false,
+    gold: true,
+    platinum: true,
+  },
+  {
+    name: "Bulk import/export",
+    free: false,
+    silver: true,
+    gold: true,
+    platinum: true,
+  },
+  {
+    name: "Analytics & reports",
+    free: "Basic",
+    silver: "Standard",
+    gold: "Advanced",
+    platinum: "Custom",
+  },
+  {
+    name: "API access",
+    free: false,
+    silver: false,
+    gold: true,
+    platinum: true,
+  },
+  {
+    name: "Team members",
+    free: "1",
+    silver: "3",
+    gold: "10",
+    platinum: "Unlimited",
+  },
+  {
+    name: "Support",
+    free: "Community",
+    silver: "Email",
+    gold: "Priority",
+    platinum: "Dedicated manager",
+  },
+];
 
 export function ChoosePlanPage() {
-  const navigate = useNavigate()
-  const [selectedIndex, setSelectedIndex] = useState(2) // Gold by default
-  const [compareOpen, setCompareOpen] = useState(false)
+  const navigate = useNavigate();
+  const [selectedIndex, setSelectedIndex] = useState(2); // Gold by default
+  const [compareOpen, setCompareOpen] = useState(false);
 
-  const selectedPlan = plans[selectedIndex]
+  const selectedPlan = plans[selectedIndex];
 
   const handleContinue = () => {
-    navigate("/onboarding/store-details")
-  }
+    navigate("/onboarding/connect-marketplace");
+  };
 
   const handlePrev = () => {
-    setSelectedIndex((i) => Math.max(0, i - 1))
-  }
+    setSelectedIndex((i) => Math.max(0, i - 1));
+  };
 
   const handleNext = () => {
-    setSelectedIndex((i) => Math.min(plans.length - 1, i + 1))
-  }
+    setSelectedIndex((i) => Math.min(plans.length - 1, i + 1));
+  };
 
   return (
     <OnboardingLayout
-      steps={getOnboardingSteps(0)}
-      currentStep={1}
+      steps={getOnboardingSteps(1)}
+      currentStep={2}
       totalSteps={4}
       wide
       footer={
         <>
-          <div />
+          <Button
+            variant="outline"
+            data-testid="back-btn"
+            className="rounded-lg"
+            asChild
+          >
+            <Link to="/onboarding/store-details">
+              <ArrowLeft className="size-4 mr-2" />
+              Back
+            </Link>
+          </Button>
           <Button
             data-testid="continue-btn"
             onClick={handleContinue}
@@ -177,7 +252,10 @@ export function ChoosePlanPage() {
         </div>
 
         {/* Plan Selector Pills */}
-        <div className="flex items-center justify-center gap-2 mb-8" data-testid="plan-pills">
+        <div
+          className="flex items-center justify-center gap-2 mb-8"
+          data-testid="plan-pills"
+        >
           {plans.map((plan, i) => (
             <button
               key={plan.id}
@@ -187,7 +265,7 @@ export function ChoosePlanPage() {
                 "relative rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300",
                 selectedIndex === i
                   ? "bg-foreground text-background shadow-lg"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
               )}
             >
               {plan.name}
@@ -207,7 +285,8 @@ export function ChoosePlanPage() {
             disabled={selectedIndex === 0}
             className={cn(
               "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 size-10 rounded-full bg-white border border-border shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl hover:scale-105",
-              selectedIndex === 0 && "opacity-30 cursor-not-allowed hover:scale-100"
+              selectedIndex === 0 &&
+                "opacity-30 cursor-not-allowed hover:scale-100",
             )}
           >
             <ChevronLeft className="size-5 text-foreground" />
@@ -218,7 +297,8 @@ export function ChoosePlanPage() {
             disabled={selectedIndex === plans.length - 1}
             className={cn(
               "absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 size-10 rounded-full bg-white border border-border shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl hover:scale-105",
-              selectedIndex === plans.length - 1 && "opacity-30 cursor-not-allowed hover:scale-100"
+              selectedIndex === plans.length - 1 &&
+                "opacity-30 cursor-not-allowed hover:scale-100",
             )}
           >
             <ChevronRightIcon className="size-5 text-foreground" />
@@ -234,10 +314,10 @@ export function ChoosePlanPage() {
               data-testid="plan-grid"
             >
               {plans.map((plan, i) => {
-                const isCenter = i === selectedIndex
-                const offset = i - selectedIndex
-                const isAdjacent = Math.abs(offset) === 1
-                const isFar = Math.abs(offset) >= 2
+                const isCenter = i === selectedIndex;
+                const offset = i - selectedIndex;
+                const isAdjacent = Math.abs(offset) === 1;
+                const isFar = Math.abs(offset) >= 2;
 
                 return (
                   <div
@@ -248,8 +328,8 @@ export function ChoosePlanPage() {
                       transform: isCenter
                         ? "scale(1)"
                         : isAdjacent
-                        ? "scale(0.92)"
-                        : "scale(0.85)",
+                          ? "scale(0.92)"
+                          : "scale(0.85)",
                       opacity: isFar ? 0.5 : 1,
                     }}
                   >
@@ -260,12 +340,18 @@ export function ChoosePlanPage() {
                         "relative w-full flex flex-col rounded-2xl text-left transition-all duration-500 overflow-hidden",
                         isCenter
                           ? "shadow-2xl z-10"
-                          : "shadow-sm hover:shadow-md z-0"
+                          : "shadow-sm hover:shadow-md z-0",
                       )}
                     >
                       {/* Gradient border wrapper for center card */}
                       {isCenter ? (
-                        <div className={cn("p-[2px] rounded-2xl bg-gradient-to-br", plan.gradientFrom, plan.gradientTo)}>
+                        <div
+                          className={cn(
+                            "p-[2px] rounded-2xl bg-gradient-to-br",
+                            plan.gradientFrom,
+                            plan.gradientTo,
+                          )}
+                        >
                           <div className="bg-white rounded-[14px] p-6 flex flex-col min-h-[380px]">
                             <CenterCardContent plan={plan} />
                           </div>
@@ -277,7 +363,7 @@ export function ChoosePlanPage() {
                       )}
                     </button>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -288,8 +374,15 @@ export function ChoosePlanPage() {
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 transition-all duration-300">
             <Check className="size-4 text-primary" />
             <span className="text-sm font-medium text-foreground">
-              <span className="text-primary font-semibold">{selectedPlan.name}</span> plan selected
-              <span className="text-muted-foreground"> — {selectedPlan.price}{selectedPlan.period}</span>
+              <span className="text-primary font-semibold">
+                {selectedPlan.name}
+              </span>{" "}
+              plan selected
+              <span className="text-muted-foreground">
+                {" "}
+                — {selectedPlan.price}
+                {selectedPlan.period}
+              </span>
             </span>
           </div>
         </div>
@@ -309,13 +402,18 @@ export function ChoosePlanPage() {
             You can change your plan later from Settings.
           </p>
         </div>
-
       </div>
 
       {/* Compare Plans Modal */}
       {compareOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-testid="compare-modal-overlay">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCompareOpen(false)} />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          data-testid="compare-modal-overlay"
+        >
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setCompareOpen(false)}
+          />
           <div
             data-testid="compare-modal"
             className="relative bg-white rounded-2xl shadow-2xl border border-border w-full max-w-4xl max-h-[85vh] overflow-hidden animate-fade-up"
@@ -325,8 +423,12 @@ export function ChoosePlanPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-cyan-500/5 to-violet-500/5" />
               <div className="relative flex items-center justify-between px-8 py-5">
                 <div>
-                  <h2 className="font-heading text-xl font-bold text-foreground">Compare Plans</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">Find the perfect fit for your business</p>
+                  <h2 className="font-heading text-xl font-bold text-foreground">
+                    Compare Plans
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Find the perfect fit for your business
+                  </p>
                 </div>
                 <button
                   data-testid="close-compare-modal"
@@ -343,32 +445,57 @@ export function ChoosePlanPage() {
               <table className="w-full text-sm" data-testid="compare-table">
                 <thead>
                   <tr className="border-b border-border sticky top-0 bg-white/95 backdrop-blur-sm z-10">
-                    <th className="text-left px-8 py-4 font-medium text-muted-foreground w-[200px]">Feature</th>
-                    {(["Free", "Silver", "Gold", "Platinum"] as const).map((name, i) => {
-                      const prices = ["$0", "$29", "$79", "$199"]
-                      const isGold = name === "Gold"
-                      const gradients = ["from-slate-400 to-slate-600", "from-blue-400 to-cyan-500", "from-primary to-cyan-400", "from-violet-500 to-purple-600"]
-                      return (
-                        <th key={name} className={cn("text-center px-4 py-4 relative", isGold && "bg-primary/[0.03]")}>
-                          {isGold && (
-                            <div className="absolute -top-0 left-1/2 -translate-x-1/2">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-gradient-to-r from-primary to-cyan-500 rounded-b-lg px-3 py-0.5 shadow-sm">
-                                <Sparkles className="size-2.5" />
-                                BEST VALUE
-                              </span>
+                    <th className="text-left px-8 py-4 font-medium text-muted-foreground w-[200px]">
+                      Feature
+                    </th>
+                    {(["Free", "Silver", "Gold", "Platinum"] as const).map(
+                      (name, i) => {
+                        const prices = ["$0", "$29", "$79", "$199"];
+                        const isGold = name === "Gold";
+                        const gradients = [
+                          "from-slate-400 to-slate-600",
+                          "from-blue-400 to-cyan-500",
+                          "from-primary to-cyan-400",
+                          "from-violet-500 to-purple-600",
+                        ];
+                        return (
+                          <th
+                            key={name}
+                            className={cn(
+                              "text-center px-4 py-4 relative",
+                              isGold && "bg-primary/[0.03]",
+                            )}
+                          >
+                            {isGold && (
+                              <div className="absolute -top-0 left-1/2 -translate-x-1/2">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-gradient-to-r from-primary to-cyan-500 rounded-b-lg px-3 py-0.5 shadow-sm">
+                                  <Sparkles className="size-2.5" />
+                                  BEST VALUE
+                                </span>
+                              </div>
+                            )}
+                            <div
+                              className={cn(
+                                "inline-flex items-center justify-center size-8 rounded-lg bg-gradient-to-br text-white mb-1.5",
+                                gradients[i],
+                              )}
+                            >
+                              {[Gift, Rocket, Crown, Zap][i] &&
+                                (() => {
+                                  const Icon = [Gift, Rocket, Crown, Zap][i];
+                                  return <Icon className="size-4" />;
+                                })()}
                             </div>
-                          )}
-                          <div className={cn("inline-flex items-center justify-center size-8 rounded-lg bg-gradient-to-br text-white mb-1.5", gradients[i])}>
-                            {[Gift, Rocket, Crown, Zap][i] && (() => {
-                              const Icon = [Gift, Rocket, Crown, Zap][i]
-                              return <Icon className="size-4" />
-                            })()}
-                          </div>
-                          <div className="font-heading text-sm font-bold text-foreground">{name}</div>
-                          <div className="text-xs text-muted-foreground font-normal mt-0.5">{prices[i]}/mo</div>
-                        </th>
-                      )
-                    })}
+                            <div className="font-heading text-sm font-bold text-foreground">
+                              {name}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-normal mt-0.5">
+                              {prices[i]}/mo
+                            </div>
+                          </th>
+                        );
+                      },
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -377,36 +504,50 @@ export function ChoosePlanPage() {
                       key={feat.name}
                       className={cn(
                         "border-b border-border/60 transition-colors hover:bg-muted/30",
-                        fi % 2 === 0 && "bg-muted/10"
+                        fi % 2 === 0 && "bg-muted/10",
                       )}
                     >
-                      <td className="px-8 py-3.5 font-medium text-foreground">{feat.name}</td>
-                      {(["free", "silver", "gold", "platinum"] as const).map((planKey) => {
-                        const val = feat[planKey]
-                        const isGoldCol = planKey === "gold"
-                        return (
-                          <td key={planKey} className={cn("text-center px-4 py-3.5", isGoldCol && "bg-primary/[0.03]")}>
-                            {typeof val === "boolean" ? (
-                              val ? (
-                                <div className="inline-flex items-center justify-center size-6 rounded-full bg-emerald-50">
-                                  <Check className="size-3.5 text-emerald-600" />
-                                </div>
+                      <td className="px-8 py-3.5 font-medium text-foreground">
+                        {feat.name}
+                      </td>
+                      {(["free", "silver", "gold", "platinum"] as const).map(
+                        (planKey) => {
+                          const val = feat[planKey];
+                          const isGoldCol = planKey === "gold";
+                          return (
+                            <td
+                              key={planKey}
+                              className={cn(
+                                "text-center px-4 py-3.5",
+                                isGoldCol && "bg-primary/[0.03]",
+                              )}
+                            >
+                              {typeof val === "boolean" ? (
+                                val ? (
+                                  <div className="inline-flex items-center justify-center size-6 rounded-full bg-emerald-50">
+                                    <Check className="size-3.5 text-emerald-600" />
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center justify-center size-6 rounded-full bg-muted/50">
+                                    <X className="size-3.5 text-muted-foreground/30" />
+                                  </div>
+                                )
                               ) : (
-                                <div className="inline-flex items-center justify-center size-6 rounded-full bg-muted/50">
-                                  <X className="size-3.5 text-muted-foreground/30" />
-                                </div>
-                              )
-                            ) : (
-                              <span className={cn(
-                                "text-sm",
-                                isGoldCol ? "font-semibold text-primary" : "text-muted-foreground"
-                              )}>
-                                {val}
-                              </span>
-                            )}
-                          </td>
-                        )
-                      })}
+                                <span
+                                  className={cn(
+                                    "text-sm",
+                                    isGoldCol
+                                      ? "font-semibold text-primary"
+                                      : "text-muted-foreground",
+                                  )}
+                                >
+                                  {val}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        },
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -416,7 +557,9 @@ export function ChoosePlanPage() {
               <div className="px-8 py-6 border-t border-border bg-gradient-to-r from-muted/30 via-transparent to-muted/30">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Not sure yet? Start with <span className="font-medium text-foreground">Free</span> and upgrade anytime.
+                    Not sure yet? Start with{" "}
+                    <span className="font-medium text-foreground">Free</span>{" "}
+                    and upgrade anytime.
                   </p>
                   <Button
                     data-testid="modal-close-btn"
@@ -433,19 +576,22 @@ export function ChoosePlanPage() {
         </div>
       )}
     </OnboardingLayout>
-  )
+  );
 }
 
 /* ============================================
    Center Card Content - the "hero" selected card
    ============================================ */
 function CenterCardContent({ plan }: { plan: Plan }) {
-  const Icon = plan.icon
+  const Icon = plan.icon;
   return (
     <>
       {/* Badge */}
       {plan.popular && (
-        <div className="flex justify-center -mt-1 mb-3" data-testid="popular-badge">
+        <div
+          className="flex justify-center -mt-1 mb-3"
+          data-testid="popular-badge"
+        >
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-cyan-500 text-white text-xs font-semibold px-3.5 py-1 shadow-md">
             <Sparkles className="size-3" />
             Best Deal
@@ -455,19 +601,31 @@ function CenterCardContent({ plan }: { plan: Plan }) {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-1">
-        <div className={cn("size-10 rounded-xl bg-gradient-to-br flex items-center justify-center", plan.gradientFrom, plan.gradientTo)}>
+        <div
+          className={cn(
+            "size-10 rounded-xl bg-gradient-to-br flex items-center justify-center",
+            plan.gradientFrom,
+            plan.gradientTo,
+          )}
+        >
           <Icon className="size-5 text-white" />
         </div>
         <div>
-          <h3 className="font-heading text-xl font-bold text-foreground">{plan.name}</h3>
+          <h3 className="font-heading text-xl font-bold text-foreground">
+            {plan.name}
+          </h3>
         </div>
       </div>
       <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
 
       {/* Price - big emphasis */}
       <div className="flex items-baseline gap-1 mb-2">
-        <span className="font-heading text-5xl font-bold tracking-tight text-foreground">{plan.price}</span>
-        <span className="text-base text-muted-foreground font-medium">{plan.period}</span>
+        <span className="font-heading text-5xl font-bold tracking-tight text-foreground">
+          {plan.price}
+        </span>
+        <span className="text-base text-muted-foreground font-medium">
+          {plan.period}
+        </span>
       </div>
 
       {/* Highlight text */}
@@ -485,37 +643,66 @@ function CenterCardContent({ plan }: { plan: Plan }) {
       <div className="space-y-3 flex-1">
         {plan.features.map((feat) => (
           <div key={feat.label} className="flex items-center gap-2.5 text-sm">
-            <div className={cn("size-5 rounded-full flex items-center justify-center shrink-0", feat.highlighted ? "bg-primary/10" : "bg-emerald-50")}>
-              <Check className={cn("size-3", feat.highlighted ? "text-primary" : "text-emerald-500")} />
+            <div
+              className={cn(
+                "size-5 rounded-full flex items-center justify-center shrink-0",
+                feat.highlighted ? "bg-primary/10" : "bg-emerald-50",
+              )}
+            >
+              <Check
+                className={cn(
+                  "size-3",
+                  feat.highlighted ? "text-primary" : "text-emerald-500",
+                )}
+              />
             </div>
             <span className="text-muted-foreground">{feat.label}:</span>
-            <span className={cn("font-semibold", feat.highlighted ? "text-primary" : "text-foreground")}>{feat.value}</span>
+            <span
+              className={cn(
+                "font-semibold",
+                feat.highlighted ? "text-primary" : "text-foreground",
+              )}
+            >
+              {feat.value}
+            </span>
           </div>
         ))}
       </div>
 
       {/* CTA */}
-      <div className={cn("mt-5 w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white bg-gradient-to-r shadow-lg transition-all duration-300 hover:shadow-xl hover:brightness-110", plan.gradientFrom, plan.gradientTo)}>
+      <div
+        className={cn(
+          "mt-5 w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white bg-gradient-to-r shadow-lg transition-all duration-300 hover:shadow-xl hover:brightness-110",
+          plan.gradientFrom,
+          plan.gradientTo,
+        )}
+      >
         Selected Plan
       </div>
     </>
-  )
+  );
 }
 
 /* ============================================
    Side Card Content - non-selected cards
    ============================================ */
 function SideCardContent({ plan }: { plan: Plan }) {
-  const Icon = plan.icon
+  const Icon = plan.icon;
   return (
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2.5">
-          <div className={cn("size-9 rounded-lg bg-muted flex items-center justify-center")}>
+          <div
+            className={cn(
+              "size-9 rounded-lg bg-muted flex items-center justify-center",
+            )}
+          >
             <Icon className="size-4 text-muted-foreground" />
           </div>
-          <h3 className="font-heading text-lg font-semibold text-foreground">{plan.name}</h3>
+          <h3 className="font-heading text-lg font-semibold text-foreground">
+            {plan.name}
+          </h3>
         </div>
         {plan.popular && (
           <span className="text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
@@ -527,7 +714,9 @@ function SideCardContent({ plan }: { plan: Plan }) {
 
       {/* Price */}
       <div className="flex items-baseline gap-0.5 mb-4">
-        <span className="font-heading text-3xl font-bold tracking-tight text-foreground">{plan.price}</span>
+        <span className="font-heading text-3xl font-bold tracking-tight text-foreground">
+          {plan.price}
+        </span>
         <span className="text-sm text-muted-foreground">{plan.period}</span>
       </div>
 
@@ -547,5 +736,5 @@ function SideCardContent({ plan }: { plan: Plan }) {
         Select Plan
       </div>
     </>
-  )
+  );
 }

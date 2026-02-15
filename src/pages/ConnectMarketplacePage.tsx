@@ -202,7 +202,7 @@ export function ConnectMarketplacePage() {
       footer={
         <>
           <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
-            <Link to="/onboarding/store-details">
+            <Link to="/onboarding/choose-plan">
               <ArrowLeft className="size-4 mr-2" />
               Back
             </Link>

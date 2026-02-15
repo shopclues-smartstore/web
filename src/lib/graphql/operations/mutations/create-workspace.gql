@@ -1,0 +1,12 @@
+mutation CreateWorkspace($input: CreateWorkspaceInput!) {
+  createWorkspace(input: $input) {
+    workspace {
+      id
+      name
+      country
+      currency
+      timezone
+      taxId
+    }
+  }
+}
