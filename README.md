@@ -95,7 +95,13 @@ smartstore-web/
 │   │   │   ├── client.ts        # Apollo Client config
 │   │   │   ├── provider.tsx     # GraphQL Provider
 │   │   │   ├── error-handler.ts # Error handling
-│   │   │   └── generated/       # Generated types (gitignored)
+│   │   │   ├── operations/      # GraphQL operations (source of truth)
+│   │   │   │   ├── mutations/   # .gql mutation files
+│   │   │   │   ├── queries/     # .gql query files
+│   │   │   │   ├── mutations.ts # Loads .gql → document exports
+│   │   │   │   ├── queries.ts   # Loads .gql → document exports
+│   │   │   │   └── index.ts     # Re-exports
+│   │   │   └── generated/       # Codegen output: types + hooks (gitignored)
 │   │   └── utils.ts             # Utility functions
 │   │
 │   ├── pages/                   # Page components
@@ -121,6 +127,8 @@ smartstore-web/
 ├── vite.config.ts               # Vite configuration
 ├── tsconfig.json                # TypeScript configuration
 ├── codegen.ts                   # GraphQL codegen config
+├── scripts/
+│   └── patch-codegen-types.cjs  # Post-codegen Apollo 4 compatibility patch
 ├── playwright.config.ts         # Playwright config
 └── vitest.config.ts             # Vitest config
 ```
@@ -240,32 +248,37 @@ smartstore_user_id       // Current user ID
 
 ### GraphQL Integration
 
-The application uses Apollo Client for GraphQL operations:
+The application uses **Apollo Client 4** for GraphQL with a central operations layout and generated types and hooks.
 
-```typescript
-// GraphQL endpoint
-${VITE_API_URL}/graphql
+- **Endpoint**: `${VITE_API_URL}/graphql`
+- **Operations**: All operations live as `.gql` files under `src/lib/graphql/operations/`:
+  - `operations/mutations/*.gql` — mutations (e.g. `create-workspace.gql`)
+  - `operations/queries/*.gql` — queries (e.g. `admin-users-sample.gql`)
+- **Runtime documents**: `@/lib/graphql/operations` loads these `.gql` files (via Vite `?raw`) and exports document constants for use in hooks.
+- **Generated output**: Codegen writes to `src/lib/graphql/generated/` (gitignored):
+  - **types.ts** — Schema/operation types, document nodes, and React hooks (`useCreateWorkspaceMutation`, `useAdminUsersSampleQuery`, etc.)
+  - Client preset also generates `graphql.ts`, `gql.ts`, `fragment-masking.ts`, etc.
+- **Apollo 4**: Hooks and types are generated for `@apollo/client/react`. A post-codegen script (`scripts/patch-codegen-types.cjs`) patches a few type names for full Apollo 4 compatibility.
 
-// Features
+**Features:**
 - Automatic Bearer token attachment
 - Request correlation IDs
 - Error handling with user-friendly messages
 - Auto-logout on UNAUTHORIZED/FORBIDDEN errors
-```
 
-#### Code Generation
+#### Code generation
 
-Generate TypeScript types from your GraphQL schema:
+Generate types and hooks from the schema and `.gql` operations:
 
 ```bash
-# One-time generation
+# One-time generation (requires running GraphQL server for introspection)
 npm run codegen
 
 # Watch mode
 npm run codegen:watch
 ```
 
-> **Note**: Requires a running GraphQL server for schema introspection.
+After codegen, use the generated hooks from `@/lib/graphql/generated/types` (e.g. `useCreateWorkspaceMutation`) or the document exports from `@/lib/graphql/operations` in custom hooks.
 
 ## Testing
 
@@ -399,7 +412,8 @@ Built on [shadcn/ui](https://ui.shadcn.com/) with the "New York" style variant:
 1. Create components in `src/components/` or feature modules in `src/features/`
 2. Add pages in `src/pages/`
 3. Update routes in `src/main.tsx`
-4. Write tests for new functionality
+4. For new GraphQL operations: add a `.gql` file under `src/lib/graphql/operations/mutations/` or `operations/queries/`, export it from `operations/mutations.ts` or `queries.ts`, then run `npm run codegen` to get types and hooks
+5. Write tests for new functionality
 
 ---
 

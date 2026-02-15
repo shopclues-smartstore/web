@@ -4,8 +4,9 @@ This directory contains the GraphQL client configuration for SmartStore.
 
 ## Overview
 
-- **Client**: Apollo Client
-- **Type Safety**: GraphQL Code Generator
+- **Client**: Apollo Client 4 (hooks from `@apollo/client/react`)
+- **Operations**: Central `.gql` files in `operations/mutations/` and `operations/queries/`
+- **Codegen**: GraphQL Code Generator produces types and React hooks in `generated/types.ts`
 - **Error Handling**: Standardized error handling with correlation IDs
 - **Authentication**: Automatic token attachment from `authStorage`
 
@@ -13,7 +14,7 @@ This directory contains the GraphQL client configuration for SmartStore.
 
 ### Running Code Generation
 
-Generate TypeScript types from your GraphQL schema:
+Generate types and hooks from the GraphQL schema and operations:
 
 ```bash
 npm run codegen
@@ -25,70 +26,63 @@ Watch mode (regenerates on file changes):
 npm run codegen:watch
 ```
 
+Requires a running GraphQL server for schema introspection. A post-codegen script (`scripts/patch-codegen-types.cjs`) runs automatically to ensure Apollo 4 compatibility.
+
 ### Creating GraphQL Operations
 
-1. Create GraphQL operations in feature directories:
-   ```
-   src/features/products/graphql/
-     - queries.ts
-     - mutations.ts
-     - fragments.ts
-   ```
+1. **Add a new `.gql` file** in the appropriate folder:
+   - **Mutations**: `src/lib/graphql/operations/mutations/<name>.gql`
+   - **Queries**: `src/lib/graphql/operations/queries/<name>.gql`
 
-2. Write your GraphQL operations using the `gql` tag:
-   ```typescript
-   import { gql } from "@apollo/client";
-
-   export const GET_PRODUCTS = gql`
-     query GetProducts($first: Int!, $after: String) {
-       products(first: $first, after: $after) {
-         edges {
-           node {
-             id
-             name
-             price
-           }
-         }
-         pageInfo {
-           hasNextPage
-           endCursor
-         }
+   Example `operations/mutations/create-workspace.gql`:
+   ```graphql
+   mutation CreateWorkspace($input: CreateWorkspaceInput!) {
+     createWorkspace(input: $input) {
+       workspace {
+         id
+         name
+         country
+         currency
+         timezone
        }
      }
-   `;
+   }
    ```
 
-3. Run codegen to generate typed hooks:
+2. **Export the document** from the loader so the app can use it at runtime:
+   - In `operations/mutations.ts`: add `import myOpGql from "./mutations/<name>.gql?raw";` and `export const MY_OP = gql(myOpGql);`
+   - In `operations/queries.ts`: same pattern for query files
+
+3. **Run codegen** to generate types and hooks:
    ```bash
    npm run codegen
    ```
 
-4. Use the generated hooks in your components:
+4. **Use the generated hook** in components:
    ```typescript
-   import { useGetProductsQuery } from "@/lib/graphql/generated";
-   
-   function ProductsList() {
-     const { data, loading, error } = useGetProductsQuery({
-       variables: { first: 10 },
-     });
-     
-     // ... component logic
+   import { useCreateWorkspaceMutation } from "@/lib/graphql/generated/types";
+
+   function StoreForm() {
+     const [createWorkspace, { loading }] = useCreateWorkspaceMutation();
+     // ...
    }
    ```
+
+   Or use the document from `@/lib/graphql/operations` in a custom hook (e.g. feature-level `useCreateWorkspaceMutation` that wraps `useMutation(CREATE_WORKSPACE)`).
 
 ### Error Handling
 
 Use the error handler utilities:
 
 ```typescript
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import {
   getUserFriendlyErrorMessage,
   getCorrelationId,
   isValidationError,
   getFieldErrors,
 } from "@/lib/graphql/error-handler";
-import { GET_PRODUCTS } from "./queries";
+import { GET_PRODUCTS } from "@/lib/graphql/operations";
 
 function ProductsList() {
   const { data, loading, error } = useQuery(GET_PRODUCTS);
@@ -125,16 +119,29 @@ The Apollo Client automatically:
 
 ```
 src/lib/graphql/
-  ├── client.ts          # Apollo Client configuration
+  ├── client.ts           # Apollo Client configuration
   ├── provider.tsx        # GraphQL Provider component
-  ├── error-handler.ts   # Error handling utilities
-  └── generated/         # Generated types and hooks (gitignored)
+  ├── error-handler.ts    # Error handling utilities
+  ├── operations/         # Source of truth for GraphQL operations
+  │   ├── mutations/      # .gql mutation files
+  │   │   └── create-workspace.gql
+  │   ├── queries/       # .gql query files
+  │   │   └── admin-users-sample.gql
+  │   ├── mutations.ts   # Loads .gql (via ?raw), exports document constants
+  │   ├── queries.ts    # Same for queries
+  │   └── index.ts      # Re-exports
+  └── generated/         # Codegen output (gitignored)
+      ├── types.ts       # Types, document nodes, and React hooks
+      ├── graphql.ts     # Client preset output
+      ├── gql.ts
+      └── ...
 ```
 
 ## Best Practices
 
-1. **Keep operations near features**: Place GraphQL operations in `src/features/{feature}/graphql/`
-2. **Use fragments**: Create reusable fragments for common data shapes
-3. **Handle loading/error states**: Always provide loading and error UI
-4. **Show correlation IDs**: Display correlation IDs in error messages for debugging
-5. **Type safety**: Never use `any` types - rely on generated types from codegen
+1. **Single source of truth**: Put all operations in `operations/mutations/*.gql` and `operations/queries/*.gql`; avoid defining the same operation in both a `.gql` file and a `.ts` file (codegen requires unique operation names).
+2. **Use generated hooks**: Prefer hooks from `@/lib/graphql/generated/types` (e.g. `useCreateWorkspaceMutation`) when they fit; otherwise use `useMutation`/`useQuery` from `@/lib/graphql/operations` documents.
+3. **Use fragments**: Create reusable fragments for common data shapes when needed.
+4. **Handle loading/error states**: Always provide loading and error UI.
+5. **Show correlation IDs**: Display correlation IDs in error messages for debugging.
+6. **Type safety**: Rely on generated types from codegen; avoid `any`.
