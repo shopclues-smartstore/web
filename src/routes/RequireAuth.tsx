@@ -3,14 +3,16 @@ import { authStorage } from "@/features/auth/lib/auth-storage";
 
 /**
  * Protects routes that require authentication.
- * If the user is not logged in, redirects to /login.
+ * If the user is not logged in or has an invalid/expired token, redirects to /login.
  * Use as a layout route element wrapping authenticated routes.
  */
 export function RequireAuth() {
   const location = useLocation();
-  const hasToken = !!authStorage.getAccessToken();
+  const hasValidSession = authStorage.hasValidSession();
 
-  if (!hasToken) {
+  if (!hasValidSession) {
+    // Clear invalid session
+    authStorage.clear();
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

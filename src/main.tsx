@@ -46,16 +46,17 @@ createRoot(document.getElementById("root")!).render(
 
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-          {/* Onboarding routes */}
-          <Route path="/onboarding/choose-plan" element={<ChoosePlanPage />} />
-          <Route path="/onboarding/store-details" element={<StoreDetailsPage />} />
-          <Route path="/onboarding/connect-marketplace" element={<ConnectMarketplacePage />} />
-          <Route path="/onboarding/add-team" element={<AddTeamPage />} />
-          <Route path="/onboarding/review" element={<ReviewPage />} />
-          <Route path="/onboarding/syncing" element={<SyncingPage />} />
-
           {/* Authenticated only: redirect to /login if not logged in */}
           <Route element={<RequireAuth />}>
+            {/* Onboarding routes */}
+            <Route path="/onboarding/choose-plan" element={<ChoosePlanPage />} />
+            <Route path="/onboarding/store-details" element={<StoreDetailsPage />} />
+            <Route path="/onboarding/connect-marketplace" element={<ConnectMarketplacePage />} />
+            <Route path="/onboarding/add-team" element={<AddTeamPage />} />
+            <Route path="/onboarding/review" element={<ReviewPage />} />
+            <Route path="/onboarding/syncing" element={<SyncingPage />} />
+
+            {/* Main app routes */}
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/products" element={<ProductsPage />} />
