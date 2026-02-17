@@ -1,0 +1,41 @@
+# Note: This query requires the backend to implement viewerBootstrap on the Query type.
+# Codegen will fail until the backend adds this field to the schema.
+query ViewerBootstrap {
+  viewerBootstrap {
+    profile {
+      id
+      email
+      name
+      status
+      roles
+    }
+    workspace {
+      id
+      name
+      status
+      country
+      timezone
+      currency
+      onboarding {
+        status
+        currentStep
+      }
+      plan {
+        code
+        name
+        status
+        provider
+        currentPeriodStart
+        currentPeriodEnd
+      }
+      marketplaceConnections {
+        id
+        provider
+        status
+        displayName
+        externalSellerId
+        lastSyncAt
+      }
+    }
+  }
+}
