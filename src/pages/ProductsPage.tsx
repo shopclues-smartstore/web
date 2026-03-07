@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { marketplaceLogos } from "@/components/ui/marketplace-logos"
 
 type SyncStatus = "synced" | "syncing" | "pending"
 
@@ -163,6 +164,8 @@ export function ProductsPage() {
     ? "All Marketplaces"
     : marketplaces.find((m) => m.id === selectedFilter)?.name ?? "All"
 
+  const selectedMpLogo = selectedFilter !== "all" ? marketplaceLogos[selectedFilter] : null
+
   const handleTogglePublish = (id: string) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, published: !p.published } : p))
@@ -254,7 +257,11 @@ export function ProductsPage() {
             className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm"
           >
             <Filter className="size-4 text-muted-foreground" />
-            <span>{selectedMpName}</span>
+            {selectedMpLogo ? (
+              <selectedMpLogo.Logo className="h-3.5" />
+            ) : (
+              <span>{selectedMpName}</span>
+            )}
             <ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", filterOpen && "rotate-180")} />
           </button>
           {filterOpen && (
@@ -295,7 +302,10 @@ export function ProductsPage() {
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      {mp.name}
+                      {(() => {
+                        const mpLogo = marketplaceLogos[mp.id]
+                        return mpLogo ? <mpLogo.Logo /> : <span>{mp.name}</span>
+                      })()}
                       <span className={cn("inline-flex items-center gap-1 text-xs", cfg.color)}>
                         <Icon className={cn("size-3", cfg.spin && "animate-spin")} />
                         {cfg.label}
@@ -360,7 +370,16 @@ export function ProductsPage() {
 
                 {/* Marketplace */}
                 <div>
-                  <Badge variant="outline" className="text-xs capitalize">{product.marketplace}</Badge>
+                  {(() => {
+                    const mpLogo = marketplaceLogos[product.marketplace]
+                    return mpLogo ? (
+                      <span className={cn("inline-flex items-center rounded-md border px-2 py-1", mpLogo.bgColor)}>
+                        <mpLogo.Logo />
+                      </span>
+                    ) : (
+                      <Badge variant="outline" className="text-xs capitalize">{product.marketplace}</Badge>
+                    )
+                  })()}
                 </div>
 
                 {/* Status */}
@@ -424,8 +443,19 @@ export function ProductsPage() {
                 {/* Label */}
                 <div className="flex items-center gap-2 mb-3">
                   <Icon className={cn("size-4", cfg.color, cfg.spin && "animate-spin")} />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Products from {mp.name} will appear here once sync completes.
+                  <span className="text-sm text-muted-foreground">
+                    Products from
+                  </span>
+                  {(() => {
+                    const mpLogo = marketplaceLogos[mp.id]
+                    return mpLogo ? (
+                      <mpLogo.Logo className="h-3.5" />
+                    ) : (
+                      <span className="text-sm font-medium text-muted-foreground">{mp.name}</span>
+                    )
+                  })()}
+                  <span className="text-sm text-muted-foreground">
+                    will appear here once sync completes.
                   </span>
                 </div>
                 {/* Skeleton rows */}
