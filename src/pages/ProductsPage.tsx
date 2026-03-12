@@ -83,10 +83,13 @@ export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>(mockProducts)
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [filterOpen, setFilterOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<"all" | "ready" | "under_review" | "action_required">("all")
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [bannerVisible, setBannerVisible] = useState(true)
 
   const filterRef = useRef<HTMLDivElement>(null)
+  const statusRef = useRef<HTMLDivElement>(null)
 
   const syncedCount = marketplaces.filter((m) => m.status === "synced").length
   const totalCount = marketplaces.length
@@ -140,6 +143,7 @@ export function ProductsPage() {
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false)
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setStatusFilterOpen(false)
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
@@ -150,6 +154,7 @@ export function ProductsPage() {
     const mp = marketplaces.find((m) => m.id === p.marketplace)
     if (!mp || mp.status !== "synced") return false
     if (selectedFilter !== "all" && p.marketplace !== selectedFilter) return false
+    if (statusFilter !== "all" && p.status !== statusFilter) return false
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       return p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
@@ -314,6 +319,70 @@ export function ProductsPage() {
                     {mp.status === "synced" && (
                       <span className="text-xs text-muted-foreground">{mp.productCount}</span>
                     )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Status Filter */}
+        <div ref={statusRef} className="relative">
+          <button
+            data-testid="status-filter-btn"
+            onClick={() => setStatusFilterOpen(!statusFilterOpen)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm"
+          >
+            {statusFilter === "all" ? (
+              <span className="text-foreground">All Statuses</span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className={cn("size-1.5 rounded-full", statusConfig[statusFilter].dotColor)} />
+                <span className="text-foreground">{statusConfig[statusFilter].label}</span>
+              </span>
+            )}
+            <ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", statusFilterOpen && "rotate-180")} />
+          </button>
+          {statusFilterOpen && (
+            <div
+              data-testid="status-filter-dropdown"
+              className="absolute top-full left-0 mt-1 w-52 bg-white border border-border rounded-xl shadow-lg p-1 z-20 animate-fade-up"
+            >
+              <button
+                data-testid="status-filter-all"
+                onClick={() => { setStatusFilter("all"); setStatusFilterOpen(false) }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                  statusFilter === "all" ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                )}
+              >
+                All Statuses
+                <span className="text-xs text-muted-foreground">
+                  {products.filter((p) => marketplaces.find((m) => m.id === p.marketplace)?.status === "synced").length}
+                </span>
+              </button>
+              <div className="h-px bg-border my-1" />
+              {(["ready", "under_review", "action_required"] as const).map((st) => {
+                const cfg = statusConfig[st]
+                const count = products.filter((p) => {
+                  const mp = marketplaces.find((m) => m.id === p.marketplace)
+                  return mp?.status === "synced" && p.status === st
+                }).length
+                return (
+                  <button
+                    key={st}
+                    data-testid={`status-filter-${st}`}
+                    onClick={() => { setStatusFilter(st); setStatusFilterOpen(false) }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                      statusFilter === st ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={cn("size-2 rounded-full", cfg.dotColor)} />
+                      {cfg.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{count}</span>
                   </button>
                 )
               })}
