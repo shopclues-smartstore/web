@@ -406,7 +406,7 @@ export function ProductsPage() {
       {/* Product Table */}
       <Card className="overflow-hidden" data-testid="product-table">
         {/* Table header */}
-        <div className="hidden sm:grid grid-cols-[1fr_100px_110px_110px_90px_80px_100px] gap-4 px-5 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+        <div className="hidden sm:grid grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-6 px-5 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
           <span>Product</span>
           <span>SKU</span>
           <span>Marketplace</span>
@@ -424,10 +424,10 @@ export function ProductsPage() {
               <div
                 key={product.id}
                 data-testid={`product-row-${product.id}`}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_100px_110px_110px_90px_80px_100px] gap-2 sm:gap-4 px-5 py-4 items-center hover:bg-muted/20 transition-colors duration-150"
+                className="grid grid-cols-1 sm:grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-2 sm:gap-6 px-5 py-4 items-center hover:bg-muted/20 transition-colors duration-150"
               >
                 {/* Product */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
                     <ImageIcon className="size-4 text-muted-foreground" />
                   </div>
@@ -532,7 +532,7 @@ export function ProductsPage() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="grid grid-cols-1 sm:grid-cols-[1fr_100px_110px_110px_90px_80px_100px] gap-4 px-5 py-4 items-center border-b border-border last:border-0"
+                      className="grid grid-cols-1 sm:grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-6 px-5 py-4 items-center border-b border-border last:border-0"
                     >
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-lg bg-muted animate-skeleton" />
