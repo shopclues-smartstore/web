@@ -632,7 +632,7 @@ function FilterSelect({ testId, label, value, onChange, options }: {
 // ─── Table Headers ────────────────────────────────────────────────
 function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_150px_1fr_160px_140px_90px_70px] gap-2 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -649,7 +649,7 @@ function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; 
 
 function PackedTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_1fr_160px_150px_160px_90px] gap-2 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -688,7 +688,7 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_1fr_160px_140px_90px_70px] gap-2 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
+        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
         checked && "bg-primary/5"
       )}
     >
@@ -698,17 +698,17 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
       </div>
 
       {/* Order date */}
-      <div className="text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">{order.timeAgo}</p>
+      <div className="text-xs text-muted-foreground overflow-hidden">
+        <p className="font-medium text-foreground truncate">{order.timeAgo}</p>
         <p className="whitespace-pre-line mt-0.5">{order.orderDate}</p>
       </div>
 
       {/* Order details */}
-      <div className="text-xs">
-        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left" data-testid={`order-link-${order.id}`}>
+      <div className="text-xs overflow-hidden">
+        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>
           {order.orderId}
         </button>
-        <p className="text-muted-foreground mt-0.5">{order.fulfillment}</p>
+        <p className="text-muted-foreground mt-0.5 truncate">{order.fulfillment}</p>
         {MpLogo && (
           <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 mt-1", marketplaceLogos[order.marketplace]?.bgColor)}>
             <MpLogo className="h-2.5" />
@@ -717,29 +717,29 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
       </div>
 
       {/* Product details */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
           <ImageIcon className="size-5 text-muted-foreground" />
         </div>
         <div className="text-xs min-w-0">
-          <a href="#" className="text-primary font-medium hover:underline line-clamp-2">{order.productTitle}</a>
+          <a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a>
           <p className="text-muted-foreground mt-0.5">Quantity : {order.quantity}</p>
-          <p className="text-muted-foreground">SKU : {order.productCategory}</p>
+          <p className="text-muted-foreground truncate">SKU : {order.productCategory}</p>
         </div>
       </div>
 
       {/* Customer details */}
-      <div className="text-xs">
-        <p className="font-medium text-foreground">{order.customerName}</p>
-        <p className="text-muted-foreground">{order.customerPhone}</p>
-        <p className="text-muted-foreground mt-0.5">{order.customerAddress}</p>
+      <div className="text-xs overflow-hidden">
+        <p className="font-medium text-foreground truncate">{order.customerName}</p>
+        <p className="text-muted-foreground truncate">{order.customerPhone}</p>
+        <p className="text-muted-foreground mt-0.5 truncate">{order.customerAddress}</p>
       </div>
 
       {/* Delivery details */}
-      <div className="text-xs">
-        <p className="font-medium text-foreground">{order.deliveryMethod}</p>
-        <p className="text-muted-foreground">Ship by : {order.shipBy}</p>
-        <p className="text-muted-foreground">Deliver by : {order.deliverBy}</p>
+      <div className="text-xs overflow-hidden">
+        <p className="font-medium text-foreground truncate">{order.deliveryMethod}</p>
+        <p className="text-muted-foreground truncate">Ship by : {order.shipBy}</p>
+        <p className="text-muted-foreground truncate">Deliver by : {order.deliverBy}</p>
         {order.sla === "breached" && (
           <span className="inline-block mt-1 text-[10px] font-semibold text-red-600 bg-red-50 rounded px-1.5 py-0.5" data-testid={`sla-breached-${order.id}`}>
             {order.slaText}
@@ -783,7 +783,7 @@ function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_1fr_160px_150px_160px_90px] gap-2 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
+        "grid grid-cols-1 lg:grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
         checked && "bg-primary/5"
       )}
     >
@@ -793,34 +793,34 @@ function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
       </div>
 
       {/* Order date */}
-      <div className="text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">{order.timeAgo}</p>
+      <div className="text-xs text-muted-foreground overflow-hidden">
+        <p className="font-medium text-foreground truncate">{order.timeAgo}</p>
         <p className="whitespace-pre-line mt-0.5">{order.orderDate}</p>
       </div>
 
       {/* Product details */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={onOpenDrawer}>
           <ImageIcon className="size-5 text-muted-foreground" />
         </div>
         <div className="text-xs min-w-0">
-          <a href="#" className="text-primary font-medium hover:underline line-clamp-2">{order.productTitle}</a>
+          <a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a>
           <p className="text-muted-foreground mt-0.5">Quantity : {order.quantity}</p>
-          <p className="text-muted-foreground">SKU : {order.productCategory}</p>
+          <p className="text-muted-foreground truncate">SKU : {order.productCategory}</p>
         </div>
       </div>
 
       {/* Customer details */}
-      <div className="text-xs">
-        <p className="font-medium text-foreground">{order.customerName}</p>
-        <p className="text-muted-foreground">{order.customerPhone}</p>
-        <p className="text-muted-foreground mt-0.5">{order.customerAddress}</p>
+      <div className="text-xs overflow-hidden">
+        <p className="font-medium text-foreground truncate">{order.customerName}</p>
+        <p className="text-muted-foreground truncate">{order.customerPhone}</p>
+        <p className="text-muted-foreground mt-0.5 truncate">{order.customerAddress}</p>
       </div>
 
       {/* Handover date */}
-      <div className="text-xs">
-        <p className="font-semibold text-foreground">{order.handoverCountdown}</p>
-        <p className="text-muted-foreground mt-0.5">{order.handoverDate}</p>
+      <div className="text-xs overflow-hidden">
+        <p className="font-semibold text-foreground truncate">{order.handoverCountdown}</p>
+        <p className="text-muted-foreground mt-0.5 truncate">{order.handoverDate}</p>
         {order.sla === "breached" && (
           <span className="inline-block mt-1 text-[10px] font-semibold text-red-600 bg-red-50 rounded px-1.5 py-0.5">
             SLA breached
@@ -829,9 +829,9 @@ function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
       </div>
 
       {/* AWB number */}
-      <div className="text-xs">
-        <a href="#" className="text-primary font-medium hover:underline tabular-nums">{order.awbNumber}</a>
-        <p className="text-muted-foreground mt-0.5">{order.awbCarrier}</p>
+      <div className="text-xs overflow-hidden">
+        <a href="#" className="text-primary font-medium hover:underline tabular-nums truncate block">{order.awbNumber}</a>
+        <p className="text-muted-foreground mt-0.5 truncate">{order.awbCarrier}</p>
       </div>
 
       {/* Label Status */}
