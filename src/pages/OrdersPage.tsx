@@ -15,12 +15,21 @@ import {
   Clock,
   AlertTriangle,
   Image as ImageIcon,
+  MapPin,
+  Phone,
+  CreditCard,
+  Truck,
+  CheckCircle2,
+  Box,
+  ArrowRight,
+  Copy,
+  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { marketplaceLogos } from "@/components/ui/marketplace-logos"
+import { marketplaceLogos, marketplaceNames } from "@/components/ui/marketplace-logos"
 
 // ─── Types ────────────────────────────────────────────────────────
 type MarketplaceId = "amazon" | "flipkart" | "coupang" | "snapdeal" | "meesho" | "myntra"
@@ -238,6 +247,9 @@ export function OrdersPage() {
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [modalOrder, setModalOrder] = useState<OrderItem | null>(null)
+
+  // Drawer state
+  const [drawerOrder, setDrawerOrder] = useState<OrderItem | null>(null)
 
   const channelRef = useRef<HTMLDivElement>(null)
   const searchTypeRef = useRef<HTMLDivElement>(null)
@@ -522,6 +534,7 @@ export function OrdersPage() {
                   order={order}
                   checked={selectedOrders.has(order.id)}
                   onToggle={() => toggleOrderSelect(order.id)}
+                  onOpenDrawer={() => setDrawerOrder(order)}
                 />
               ) : (
                 <PendingOrderRow
@@ -530,6 +543,7 @@ export function OrdersPage() {
                   checked={selectedOrders.has(order.id)}
                   onToggle={() => toggleOrderSelect(order.id)}
                   onAction={() => openModal(order)}
+                  onOpenDrawer={() => setDrawerOrder(order)}
                 />
               )
             )
@@ -550,6 +564,14 @@ export function OrdersPage() {
           order={modalOrder}
           marketplace={selectedChannel}
           onClose={() => { setShowModal(false); setModalOrder(null) }}
+        />
+      )}
+
+      {/* Order Detail Drawer */}
+      {drawerOrder && (
+        <OrderDetailDrawer
+          order={drawerOrder}
+          onClose={() => setDrawerOrder(null)}
         />
       )}
     </div>
@@ -658,9 +680,10 @@ function Checkbox({ checked, onChange, testId }: { checked: boolean; onChange: (
 }
 
 // ─── Pending Order Row ────────────────────────────────────────────
-function PendingOrderRow({ order, checked, onToggle, onAction }: {
-  order: OrderItem; checked: boolean; onToggle: () => void; onAction: () => void
+function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onAction: () => void; onOpenDrawer: () => void
 }) {
+  const MpLogo = marketplaceLogos[order.marketplace]?.Logo
   return (
     <div
       data-testid={`order-row-${order.id}`}
@@ -682,10 +705,15 @@ function PendingOrderRow({ order, checked, onToggle, onAction }: {
 
       {/* Order details */}
       <div className="text-xs">
-        <a href="#" className="text-primary font-medium hover:underline" data-testid={`order-link-${order.id}`}>
+        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left" data-testid={`order-link-${order.id}`}>
           {order.orderId}
-        </a>
+        </button>
         <p className="text-muted-foreground mt-0.5">{order.fulfillment}</p>
+        {MpLogo && (
+          <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 mt-1", marketplaceLogos[order.marketplace]?.bgColor)}>
+            <MpLogo className="h-2.5" />
+          </span>
+        )}
       </div>
 
       {/* Product details */}
@@ -748,8 +776,8 @@ function PendingOrderRow({ order, checked, onToggle, onAction }: {
 }
 
 // ─── Packed Order Row ─────────────────────────────────────────────
-function PackedOrderRow({ order, checked, onToggle }: {
-  order: OrderItem; checked: boolean; onToggle: () => void
+function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
 }) {
   return (
     <div
@@ -772,7 +800,7 @@ function PackedOrderRow({ order, checked, onToggle }: {
 
       {/* Product details */}
       <div className="flex items-start gap-3">
-        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={onOpenDrawer}>
           <ImageIcon className="size-5 text-muted-foreground" />
         </div>
         <div className="text-xs min-w-0">
@@ -1000,6 +1028,252 @@ function OrderModal({ order, marketplace, onClose }: {
           </Button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Order Detail Drawer ──────────────────────────────────────────
+const timelineSteps = [
+  { key: "placed", label: "Order Placed", icon: Package, time: "24 Nov, 10:14 AM", done: true },
+  { key: "confirmed", label: "Order Confirmed", icon: CheckCircle2, time: "24 Nov, 10:18 AM", done: true },
+  { key: "packed", label: "Packed", icon: Box, time: "25 Nov, 2:30 PM", done: true },
+  { key: "shipped", label: "Shipped", icon: Truck, time: "26 Nov, 9:00 AM", done: false },
+  { key: "delivered", label: "Delivered", icon: CheckCircle2, time: "—", done: false },
+]
+
+function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () => void }) {
+  const MpLogo = marketplaceLogos[order.marketplace]?.Logo
+  const mpName = marketplaceNames[order.marketplace] ?? order.marketplace
+
+  // Close on escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handleKey)
+    return () => document.removeEventListener("keydown", handleKey)
+  }, [onClose])
+
+  const statusColor = order.status === "pending" || order.status === "new"
+    ? "bg-amber-100 text-amber-800 border-amber-200"
+    : order.status === "accepted"
+    ? "bg-blue-100 text-blue-800 border-blue-200"
+    : order.status === "packed"
+    ? "bg-violet-100 text-violet-800 border-violet-200"
+    : "bg-muted text-muted-foreground border-border"
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40 bg-black/30 transition-opacity" onClick={onClose} data-testid="drawer-backdrop" />
+
+      {/* Drawer */}
+      <div
+        data-testid="order-detail-drawer"
+        className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-border flex flex-col animate-slide-in-right"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20">
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold text-foreground font-heading" data-testid="drawer-title">Order Details</h2>
+            <span className={cn("text-[10px] font-semibold rounded-full px-2 py-0.5 border", statusColor)}>
+              {order.status === "new" ? "New" : order.status.charAt(0).toUpperCase() + order.status.slice(1).replace("_", " ")}
+            </span>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors" data-testid="drawer-close-btn">
+            <X className="size-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* Order ID + Marketplace */}
+          <div className="px-5 py-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Order ID</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm font-bold text-foreground tabular-nums" data-testid="drawer-order-id">{order.orderId}</span>
+                  <button onClick={() => copyToClipboard(order.orderId)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copy Order ID">
+                    <Copy className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Marketplace</p>
+                <div className="flex items-center gap-2 mt-1" data-testid="drawer-marketplace">
+                  {MpLogo && (
+                    <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5", marketplaceLogos[order.marketplace]?.bgColor)}>
+                      <MpLogo className="h-3" />
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-foreground">{mpName}</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{order.timeAgo} &middot; {order.orderDate.replace("\n", ", ")}</p>
+          </div>
+
+          {/* Product Info */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Product</p>
+            <div className="flex items-start gap-3">
+              <div className="size-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <ImageIcon className="size-6 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground leading-snug">{order.productTitle}</p>
+                <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                  <span>Qty: <span className="font-medium text-foreground">{order.quantity}</span></span>
+                  <span>SKU: <span className="font-medium text-foreground">{order.productCategory}</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Timeline */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-4">Order Timeline</p>
+            <div className="relative pl-6" data-testid="order-timeline">
+              {/* Vertical line */}
+              <div className="absolute left-[11px] top-1 bottom-1 w-[2px] bg-border" />
+              {timelineSteps.map((step, i) => {
+                const Icon = step.icon
+                const isLast = i === timelineSteps.length - 1
+                return (
+                  <div key={step.key} className={cn("relative flex items-start gap-3 pb-5", isLast && "pb-0")} data-testid={`timeline-${step.key}`}>
+                    {/* Dot */}
+                    <div className={cn(
+                      "absolute -left-6 size-[22px] rounded-full flex items-center justify-center border-2 z-10",
+                      step.done
+                        ? "bg-primary border-primary"
+                        : "bg-white border-border"
+                    )}>
+                      <Icon className={cn("size-3", step.done ? "text-white" : "text-muted-foreground")} />
+                    </div>
+                    <div className="pt-0.5">
+                      <p className={cn("text-sm font-medium", step.done ? "text-foreground" : "text-muted-foreground")}>{step.label}</p>
+                      <p className="text-xs text-muted-foreground">{step.time}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Customer Details */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Customer</p>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <User className="size-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium text-foreground">{order.customerName}</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone className="size-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm text-muted-foreground">{order.customerPhone}</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <MapPin className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">{order.customerAddress}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery & Shipping */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Shipping & Delivery</p>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoCell label="Method" value={order.deliveryMethod} />
+              <InfoCell label="Ship by" value={order.shipBy} />
+              <InfoCell label="Deliver by" value={order.deliverBy} />
+              <InfoCell label="Fulfillment" value="Seller" />
+              {order.awbNumber && <InfoCell label="AWB Number" value={order.awbNumber} />}
+              {order.awbCarrier && <InfoCell label="Carrier" value={order.awbCarrier} />}
+            </div>
+            {order.sla !== "ok" && (
+              <div className="mt-3">
+                <span className={cn(
+                  "inline-flex items-center gap-1 text-xs font-semibold rounded px-2 py-1",
+                  order.sla === "breached" ? "text-red-700 bg-red-50" : "text-amber-700 bg-amber-50"
+                )}>
+                  <AlertTriangle className="size-3" />
+                  {order.slaText}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Packaging Details */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Package Details</p>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoCell label="Weight" value="400g" />
+              <InfoCell label="Dimensions" value="17 x 15 x 7 cm" />
+              <InfoCell label="Package ID" value="SDGU00015" />
+              <InfoCell label="Shipment ID" value={`SHP-${order.orderId.slice(-6)}`} />
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div className="px-5 py-4">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Payment</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="size-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">{order.payment}</span>
+              </div>
+              <span className="text-base font-bold text-foreground tabular-nums">{order.amount}</span>
+            </div>
+            {order.payment === "Prepaid" && (
+              <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                <CheckCircle2 className="size-3" />
+                Payment received
+              </p>
+            )}
+            {order.payment === "COD" && (
+              <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                <Clock className="size-3" />
+                Collect on delivery
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="border-t border-border px-5 py-3 flex items-center gap-2 bg-muted/20">
+          <Button variant="outline" size="sm" className="flex-1 gap-1.5" data-testid="drawer-action-secondary">
+            <Printer className="size-3.5" />
+            Print Invoice
+          </Button>
+          <Button size="sm" className="flex-1 gap-1.5" data-testid="drawer-action-primary">
+            <ArrowRight className="size-3.5" />
+            Process Order
+          </Button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.25s ease-out;
+        }
+      `}</style>
+    </>
+  )
+}
+
+function InfoCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
     </div>
   )
 }
