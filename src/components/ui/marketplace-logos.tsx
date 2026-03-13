@@ -42,9 +42,36 @@ export function WishLogo({ className }: LogoProps) {
   )
 }
 
+export function CoupangLogo({ className }: LogoProps) {
+  return (
+    <svg className={cn("h-[14px] w-auto", className)} viewBox="0 0 80 16" aria-label="Coupang" fill="none">
+      <text x="0" y="13" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="700" fontSize="14" fill="#E42529" letterSpacing="-0.3">coupang</text>
+    </svg>
+  )
+}
+
+export function SnapdealLogo({ className }: LogoProps) {
+  return (
+    <svg className={cn("h-[14px] w-auto", className)} viewBox="0 0 78 16" aria-label="Snapdeal" fill="none">
+      <text x="0" y="13" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="700" fontSize="14" fill="#E40046" letterSpacing="-0.3">snapdeal</text>
+    </svg>
+  )
+}
+
+export function MyntraLogo({ className }: LogoProps) {
+  return (
+    <svg className={cn("h-[14px] w-auto", className)} viewBox="0 0 56 16" aria-label="Myntra" fill="none">
+      <text x="0" y="13" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="13" fill="#FF3F6C" letterSpacing="-0.3">Myntra</text>
+    </svg>
+  )
+}
+
 export const marketplaceLogos: Record<string, { Logo: React.FC<LogoProps>; bgColor: string }> = {
   amazon: { Logo: AmazonLogo, bgColor: "bg-orange-50 border-orange-100" },
   flipkart: { Logo: FlipkartLogo, bgColor: "bg-blue-50 border-blue-100" },
   meesho: { Logo: MeeshoLogo, bgColor: "bg-pink-50 border-pink-100" },
   wish: { Logo: WishLogo, bgColor: "bg-cyan-50 border-cyan-100" },
+  coupang: { Logo: CoupangLogo, bgColor: "bg-red-50 border-red-100" },
+  snapdeal: { Logo: SnapdealLogo, bgColor: "bg-rose-50 border-rose-100" },
+  myntra: { Logo: MyntraLogo, bgColor: "bg-pink-50 border-pink-100" },
 }
