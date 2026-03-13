@@ -431,7 +431,7 @@ export function ProductsPage() {
                   <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
                     <ImageIcon className="size-4 text-muted-foreground" />
                   </div>
-                  <span className="text-sm font-medium text-foreground truncate">{product.title}</span>
+                  <span className="text-xs font-medium text-foreground truncate">{product.title}</span>
                 </div>
 
                 {/* SKU */}
