@@ -53,17 +53,17 @@ const initialMarketplaces: MarketplaceSync[] = [
 ]
 
 const mockProducts: Product[] = [
-  { id: "p1", title: "Wireless Bluetooth Headphones Pro", sku: "WBH-PRO-001", marketplace: "amazon", image: "", status: "ready", inventory: 234, price: "$49.99", published: true },
-  { id: "p2", title: "USB-C Hub 7-in-1 Adapter", sku: "UCH-7IN1-002", marketplace: "amazon", image: "", status: "ready", inventory: 89, price: "$29.99", published: true },
-  { id: "p3", title: "Smart LED Desk Lamp", sku: "SLD-LAMP-003", marketplace: "amazon", image: "", status: "under_review", inventory: 45, price: "$39.99", published: false },
-  { id: "p4", title: "Mechanical Keyboard RGB", sku: "MK-RGB-004", marketplace: "amazon", image: "", status: "ready", inventory: 312, price: "$79.99", published: true },
-  { id: "p5", title: "Portable Power Bank 20000mAh", sku: "PPB-20K-005", marketplace: "amazon", image: "", status: "action_required", inventory: 8, price: "$24.99", published: true },
-  { id: "p6", title: "Noise Cancelling Earbuds", sku: "NCE-BUD-006", marketplace: "amazon", image: "", status: "ready", inventory: 167, price: "$59.99", published: true },
-  { id: "p7", title: "Ergonomic Mouse Wireless", sku: "EMW-001", marketplace: "flipkart", image: "", status: "ready", inventory: 203, price: "\u20B91,499", published: true },
+  { id: "p1", title: "Wireless Bluetooth Headphones Pro Max - Active Noise Cancelling Over-Ear", sku: "WBH-PRO-001", marketplace: "amazon", image: "", status: "ready", inventory: 234, price: "$49.99", published: true },
+  { id: "p2", title: "USB-C Hub 7-in-1 Multiport Adapter with 4K HDMI, SD Card Reader", sku: "UCH-7IN1-002", marketplace: "amazon", image: "", status: "ready", inventory: 89, price: "$29.99", published: true },
+  { id: "p3", title: "Smart LED Desk Lamp with Wireless Charging Base - Touch Dimmer", sku: "SLD-LAMP-003", marketplace: "amazon", image: "", status: "under_review", inventory: 45, price: "$39.99", published: false },
+  { id: "p4", title: "Mechanical Keyboard RGB Backlit - Hot Swappable Cherry MX Switches", sku: "MK-RGB-004", marketplace: "amazon", image: "", status: "ready", inventory: 312, price: "$79.99", published: true },
+  { id: "p5", title: "Portable Power Bank 20000mAh Fast Charging USB-C PD 65W Laptop", sku: "PPB-20K-005", marketplace: "amazon", image: "", status: "action_required", inventory: 8, price: "$24.99", published: true },
+  { id: "p6", title: "Noise Cancelling Earbuds TWS Bluetooth 5.3 - IPX7 Waterproof", sku: "NCE-BUD-006", marketplace: "amazon", image: "", status: "ready", inventory: 167, price: "$59.99", published: true },
+  { id: "p7", title: "Ergonomic Mouse Wireless Vertical Design - Rechargeable Silent Click", sku: "EMW-001", marketplace: "flipkart", image: "", status: "ready", inventory: 203, price: "\u20B91,499", published: true },
   { id: "p8", title: "Webcam 1080p Full HD", sku: "WC-1080-002", marketplace: "flipkart", image: "", status: "ready", inventory: 56, price: "\u20B92,299", published: true },
-  { id: "p9", title: "USB Microphone Condenser", sku: "UMC-STD-003", marketplace: "flipkart", image: "", status: "under_review", inventory: 34, price: "\u20B93,499", published: false },
-  { id: "p10", title: "Smart Watch Fitness Tracker", sku: "SWF-TRK-004", marketplace: "flipkart", image: "", status: "ready", inventory: 128, price: "\u20B94,999", published: true },
-  { id: "p11", title: "Laptop Stand Adjustable", sku: "LSA-ALU-005", marketplace: "flipkart", image: "", status: "action_required", inventory: 3, price: "\u20B91,999", published: true },
+  { id: "p9", title: "USB Microphone Condenser Studio Recording Kit with Pop Filter & Arm", sku: "UMC-STD-003", marketplace: "flipkart", image: "", status: "under_review", inventory: 34, price: "\u20B93,499", published: false },
+  { id: "p10", title: "Smart Watch Fitness Tracker with Heart Rate SpO2 Sleep Monitor", sku: "SWF-TRK-004", marketplace: "flipkart", image: "", status: "ready", inventory: 128, price: "\u20B94,999", published: true },
+  { id: "p11", title: "Laptop Stand Adjustable Aluminium Foldable Ergonomic Riser for MacBook", sku: "LSA-ALU-005", marketplace: "flipkart", image: "", status: "action_required", inventory: 3, price: "\u20B91,999", published: true },
 ]
 
 const statusConfig = {
