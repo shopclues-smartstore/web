@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   ChevronDown,
   Search,
@@ -15,6 +15,7 @@ import {
   Info,
   RefreshCw,
   Image as ImageIcon,
+  Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -176,6 +177,20 @@ export function ProductsPage() {
       prev.map((p) => (p.id === id ? { ...p, published: !p.published } : p))
     )
   }
+
+  const handleUpdateInventory = useCallback((id: string, value: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, inventory: value } : p))
+    )
+    toast.success("Inventory updated")
+  }, [])
+
+  const handleUpdatePrice = useCallback((id: string, value: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, price: value } : p))
+    )
+    toast.success("Price updated")
+  }, [])
 
   const currentAllSynced = marketplaces.every((m) => m.status === "synced")
 
@@ -460,12 +475,21 @@ export function ProductsPage() {
                 </div>
 
                 {/* Inventory */}
-                <span className={cn("text-sm tabular-nums", product.inventory <= 10 ? "text-amber-600 font-medium" : "text-foreground")}>
-                  {product.inventory}
-                </span>
+                <InlineEditCell
+                  testId={`inventory-${product.id}`}
+                  value={String(product.inventory)}
+                  displayClass={cn("text-sm tabular-nums", product.inventory <= 10 ? "text-amber-600 font-medium" : "text-foreground")}
+                  onSave={(v) => handleUpdateInventory(product.id, Number(v) || 0)}
+                  type="number"
+                />
 
                 {/* Price */}
-                <span className="text-sm font-medium tabular-nums text-foreground">{product.price}</span>
+                <InlineEditCell
+                  testId={`price-${product.id}`}
+                  value={product.price}
+                  displayClass="text-sm font-medium tabular-nums text-foreground"
+                  onSave={(v) => handleUpdatePrice(product.id, v)}
+                />
 
                 {/* Actions */}
                 <div className="flex items-center gap-1">
@@ -554,6 +578,56 @@ export function ProductsPage() {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+
+function InlineEditCell({ testId, value, displayClass, onSave, type = "text" }: {
+  testId: string; value: string; displayClass: string; onSave: (v: string) => void; type?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { setDraft(value) }, [value])
+  useEffect(() => { if (editing) inputRef.current?.select() }, [editing])
+
+  const commit = () => {
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== value) onSave(trimmed)
+    else setDraft(value)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          data-testid={`${testId}-input`}
+          type={type}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(value); setEditing(false) } }}
+          onBlur={commit}
+          className="h-7 w-full rounded-md border border-primary bg-white px-2 text-sm tabular-nums outline-none ring-2 ring-primary/20"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="group flex items-center gap-1.5">
+      <span className={displayClass}>{value}</span>
+      <button
+        data-testid={`${testId}-edit-btn`}
+        onClick={() => setEditing(true)}
+        className="rounded p-0.5 text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-primary hover:bg-primary/10 transition-colors"
+        title="Edit"
+      >
+        <Pencil className="size-3" />
+      </button>
     </div>
   )
 }
