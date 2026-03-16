@@ -1,0 +1,19 @@
+mutation CreateWorkspaceSubscription($input: CreateWorkspaceSubscriptionInput!) {
+  createWorkspaceSubscription(input: $input) {
+    subscription {
+      id
+      workspaceId
+      plan
+      planId
+      status
+      provider
+      currentPeriodStart
+      currentPeriodEnd
+      cancelAtPeriodEnd
+      providerCustomerId
+      providerSubscriptionId
+      createdAt
+      updatedAt
+    }
+  }
+}
