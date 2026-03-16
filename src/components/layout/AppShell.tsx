@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Outlet } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { ViewerBootstrapLoader } from "@/features/auth/components/ViewerBootstrapLoader"
 import { Header } from "./Header"
 import { Sidebar } from "./Sidebar"
 import { Toaster } from "sonner"
@@ -19,6 +20,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="app-shell">
+      <ViewerBootstrapLoader />
       <Header />
       <Sidebar
         collapsed={sidebarCollapsed}

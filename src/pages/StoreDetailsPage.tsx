@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { ArrowLeft, ArrowRight, Building2, Info, Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Building2, Info, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useViewerBootstrap } from "@/features/auth/hooks";
 import { useCreateWorkspaceMutation } from "@/lib/graphql/generated/types";
 import { COUNTRIES, type Country } from "@/shared/constants/countries";
 
@@ -32,6 +33,7 @@ export function StoreDetailsPage() {
   const [taxId, setTaxId] = useState("06ELGPS3107F1Z8");
   const [createWorkspaceMutation, { loading: creating }] =
     useCreateWorkspaceMutation();
+  const { workspace } = useViewerBootstrap({ fetchPolicy: "cache-first" });
 
   const handleCountryChange = (country: Country) => {
     setSelectedCountry(country);
@@ -41,6 +43,12 @@ export function StoreDetailsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Return early if workspace already exists
+    if (workspace?.id) {
+      navigate("/onboarding/choose-plan");
+      return;
+    }
+
     const name = storeName.trim();
     if (!name) {
       toast.error("Please enter a store or brand name.");
@@ -85,31 +93,22 @@ export function StoreDetailsPage() {
       wide
       footer={
         <>
-          <Button
-            variant="outline"
-            data-testid="back-btn"
-            className="rounded-lg"
-            asChild
-          >
-            <Link to="/">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            type="submit"
-            form="store-details-form"
-            data-testid="continue-btn"
-            disabled={creating}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            {creating ? (
-              <Loader2 className="size-4 animate-spin mr-2" />
-            ) : (
-              <ArrowRight className="size-4 mr-2" />
-            )}
-            Continue
-          </Button>
+          <div className="ml-auto">
+            <Button
+              type="submit"
+              form="store-details-form"
+              data-testid="continue-btn"
+              disabled={creating}
+              className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              {creating ? (
+                <Loader2 className="size-4 animate-spin mr-2" />
+              ) : (
+                <ArrowRight className="size-4 mr-2" />
+              )}
+              Continue
+            </Button>
+          </div>
         </>
       }
     >
@@ -220,8 +219,7 @@ export function StoreDetailsPage() {
             <Info className="size-3" />
             You can change these later from Settings.
           </p>
-        </div>{" "}
-        {/* end max-w-2xl */}
+        </div>
       </div>
     </OnboardingLayout>
   );
