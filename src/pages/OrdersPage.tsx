@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Search,
   RefreshCw,
   X,
   Check,
   Download,
-  Upload,
-  Scissors,
-  CircleAlert,
   Printer,
   FileText,
   Package,
@@ -24,6 +23,14 @@ import {
   ArrowRight,
   Copy,
   User,
+  Filter,
+  Tag,
+  RotateCcw,
+  PackageCheck,
+  XCircle,
+  Undo2,
+  ShoppingBag,
+  CalendarDays,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,22 +41,16 @@ import { marketplaceLogos, marketplaceNames } from "@/components/ui/marketplace-
 // ─── Types ────────────────────────────────────────────────────────
 type MarketplaceId = "amazon" | "flipkart" | "coupang" | "snapdeal" | "meesho" | "myntra"
 
-type OrderStatusKey = "new" | "pending" | "accepted" | "packed" | "ready_to_ship" | "in_transit" | "completed" | "cancelled"
-
-interface MarketplaceChannel {
-  id: MarketplaceId
-  orderCount: number
-}
+type OrderStatusKey = "pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned"
+type FulfillmentStatus = "unfulfilled" | "fulfilled" | "partially_fulfilled"
 
 interface OrderItem {
   id: string
   orderId: string
   orderDate: string
-  timeAgo: string
-  fulfillment: string
+  orderDateRaw: Date
   productTitle: string
   productSku: string
-  productCategory: string
   quantity: number
   customerName: string
   customerPhone: string
@@ -62,238 +63,181 @@ interface OrderItem {
   payment: "Prepaid" | "COD"
   amount: string
   status: OrderStatusKey
+  fulfillment: FulfillmentStatus
   marketplace: MarketplaceId
-  // Packed-specific fields
-  handoverDate?: string
-  handoverCountdown?: string
   awbNumber?: string
   awbCarrier?: string
-  labelStatus?: "printed" | "pending"
 }
 
-// ─── Marketplace Config ───────────────────────────────────────────
-const marketplaceChannels: MarketplaceChannel[] = [
-  { id: "amazon", orderCount: 100 },
-  { id: "flipkart", orderCount: 100 },
-  { id: "snapdeal", orderCount: 100 },
-  { id: "meesho", orderCount: 100 },
-  { id: "coupang", orderCount: 100 },
-  { id: "myntra", orderCount: 100 },
+// ─── Mock Data ────────────────────────────────────────────────────
+const customerNames = [
+  "Amit Tiwari", "Priya Singh", "Rahul Kumar", "Kim Soo-jin", "Neha Sharma",
+  "Arjun Patel", "Sneha Reddy", "Vikram Mehra", "Ananya Das", "Rohan Joshi",
+  "Kavita Nair", "Sanjay Gupta", "Deepika Rao", "Manoj Verma", "Pooja Iyer",
+]
+const addresses = [
+  "122003, Gurugram, Haryana", "Seoul, 30174, Republic of Korea", "400001, Mumbai, Maharashtra",
+  "560001, Bangalore, Karnataka", "110001, New Delhi, Delhi", "600001, Chennai, Tamil Nadu",
+  "700001, Kolkata, West Bengal", "380001, Ahmedabad, Gujarat",
+]
+const products = [
+  { title: "Reebok Men's Running Shoes - Stride Runner Lightweight Mesh...", sku: "RBK-SHO-001" },
+  { title: "Samsung Galaxy Buds Pro - Wireless Earbuds Noise Cancel...", sku: "SAM-EAR-042" },
+  { title: "Cotton Casual T-Shirt - V-Neck Premium Fabric Breathable...", sku: "CTN-TSH-118" },
+  { title: "Borosil Glass Lunch Box - 3 Compartment Microwave Safe...", sku: "BRS-KIT-067" },
+  { title: "Apple AirPods Max - Space Gray Over-Ear Headphones Hi-Fi...", sku: "APL-AUD-003" },
+  { title: "Nike Air Max 270 React - Men's Athletic Sneakers Blue...", sku: "NIK-SHO-055" },
+  { title: "Sony WH-1000XM5 - Wireless Noise Cancelling Headphones...", sku: "SNY-AUD-012" },
+  { title: "Adidas Ultraboost 22 - Running Shoes Cloud White...", sku: "ADI-SHO-089" },
+  { title: "OnePlus Nord Buds 2 - True Wireless ANC Earbuds...", sku: "ONP-EAR-034" },
+  { title: "Prestige Omega Deluxe Induction Base Fry Pan 24cm...", sku: "PRG-KIT-022" },
 ]
 
-const statusBarConfig: Record<MarketplaceId, { key: OrderStatusKey; label: string; count: number }[]> = {
-  amazon: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  flipkart: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  coupang: [
-    { key: "new", label: "New", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  snapdeal: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  meesho: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  myntra: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-}
-
-// Quick filter configs
-const quickFilters = [
-  "Ship by today",
-  "Ship together orders",
-  "Verge of cancellation",
-  "Verge of late shipment",
-  "Verge of SLA breach",
+const statuses: OrderStatusKey[] = ["pending", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"]
+const fulfillments: FulfillmentStatus[] = ["unfulfilled", "fulfilled", "partially_fulfilled"]
+const marketplaces: MarketplaceId[] = ["amazon", "flipkart", "coupang", "snapdeal", "meesho", "myntra"]
+const payments: ("Prepaid" | "COD")[] = ["Prepaid", "COD"]
+const slaStates: { sla: "ok" | "warning" | "breached"; text?: string }[] = [
+  { sla: "ok" }, { sla: "ok" }, { sla: "ok" },
+  { sla: "warning", text: "SLA breaching in 2 hrs" },
+  { sla: "breached", text: "SLA breached" },
 ]
+const deliveryMethods = ["Self ship", "Easy ship", "Fulfilled by Marketplace"]
 
-// ─── Mock Order Data ──────────────────────────────────────────────
 function generateMockOrders(): OrderItem[] {
-  const names = ["Amit tiwari", "Mr. choi", "Rahul Kumar", "Priya Singh", "Kim Soo-jin"]
-  const addresses = [
-    { addr: "122003, Gurugram, Haryana", phone: "9876543210" },
-    { addr: "Seoul, 30174, Republic of Korea", phone: "9876543210" },
-    { addr: "400001, Mumbai, Maharashtra", phone: "9876543210" },
-    { addr: "560001, Bangalore, Karnataka", phone: "9876543210" },
-    { addr: "Seoul, 04524, Republic of Korea", phone: "9876543210" },
-  ]
-  const products = [
-    { title: "Reebok Men's Running Shoes - Stride Runner - Lightweight...", sku: "Shoes & Handbags", category: "Shoes & Handbags" },
-    { title: "Samsung Galaxy Buds Pro - Wireless Earbuds - Noise Cancel...", sku: "Electronics", category: "Electronics" },
-    { title: "Cotton Casual T-Shirt - V-Neck - Premium Fabric...", sku: "Apparel", category: "Apparel" },
-    { title: "Borosil Glass Lunch Box - 3 Compartment - Microwave Safe...", sku: "Kitchen", category: "Kitchen" },
-  ]
-  const slaStates: { sla: "ok" | "warning" | "breached"; text?: string }[] = [
-    { sla: "ok" },
-    { sla: "warning", text: "SLA breaching in 2 hrs" },
-    { sla: "breached", text: "SLA breached" },
-  ]
-  const statuses: OrderStatusKey[] = ["pending", "accepted", "packed", "ready_to_ship", "in_transit"]
-  const marketplaces: MarketplaceId[] = ["amazon", "flipkart", "coupang", "snapdeal", "meesho", "myntra"]
-
   const orders: OrderItem[] = []
-  let idx = 0
-  for (const mp of marketplaces) {
-    for (let i = 0; i < 8; i++) {
-      const nameIdx = (idx + i) % names.length
-      const addrIdx = (idx + i) % addresses.length
-      const prodIdx = (idx + i) % products.length
-      const slaIdx = i % slaStates.length
-      const statusIdx = i % statuses.length
-      let status = statuses[statusIdx]
-      // For coupang, replace "pending" with "new"
-      if (mp === "coupang" && status === "pending") status = "new"
-      const isPacked = status === "packed"
-      orders.push({
-        id: `ord-${mp}-${i}`,
-        orderId: `7588599904${6732 + i}`,
-        orderDate: "24 Nov, 2025\n10:14 AM",
-        timeAgo: "2 hours ago",
-        fulfillment: "Fulfilment method : Seller",
-        productTitle: products[prodIdx].title,
-        productSku: products[prodIdx].sku,
-        productCategory: products[prodIdx].category,
-        quantity: 2,
-        customerName: mp === "coupang" ? names[1] : names[nameIdx],
-        customerPhone: addresses[addrIdx].phone,
-        customerAddress: mp === "coupang" ? addresses[1].addr : addresses[addrIdx].addr,
-        deliveryMethod: i % 2 === 0 ? "Self ship" : "Easy ship",
-        shipBy: "26 Nov",
-        deliverBy: "28 Nov",
-        sla: slaStates[slaIdx].sla,
-        slaText: slaStates[slaIdx].text,
-        payment: i % 3 === 0 ? "COD" : "Prepaid",
-        amount: mp === "coupang" ? "₩24,000" : (mp === "amazon" ? "₹1,200" : "₹1,200"),
-        status,
-        marketplace: mp,
-        // Packed-specific
-        handoverDate: isPacked ? "11:59 PM, 2 Dec 2025" : undefined,
-        handoverCountdown: isPacked ? "13 hours to go" : undefined,
-        awbNumber: isPacked ? `7487584489${5889 + i}` : undefined,
-        awbCarrier: isPacked ? "Delhivery" : undefined,
-        labelStatus: isPacked ? (i % 2 === 0 ? "printed" : "pending") : undefined,
-      })
-    }
-    idx += 3
+  const baseDate = new Date(2025, 10, 24) // Nov 24, 2025
+
+  for (let i = 0; i < 87; i++) {
+    const mp = marketplaces[i % marketplaces.length]
+    const status = statuses[i % statuses.length]
+    const prod = products[i % products.length]
+    const slaState = slaStates[i % slaStates.length]
+    const dayOffset = Math.floor(i / 6)
+    const date = new Date(baseDate.getTime() - dayOffset * 86400000)
+    const isCoupang = mp === "coupang"
+
+    let fulfillment: FulfillmentStatus = "unfulfilled"
+    if (status === "shipped" || status === "delivered") fulfillment = "fulfilled"
+    else if (status === "packed") fulfillment = Math.random() > 0.5 ? "partially_fulfilled" : "unfulfilled"
+
+    orders.push({
+      id: `ord-${i}`,
+      orderId: `ORD-${(100000 + i).toString()}`,
+      orderDate: date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      orderDateRaw: date,
+      productTitle: prod.title,
+      productSku: prod.sku,
+      quantity: (i % 4) + 1,
+      customerName: customerNames[i % customerNames.length],
+      customerPhone: `98${String(76543210 + i).slice(0, 8)}`,
+      customerAddress: isCoupang ? "Seoul, 04524, Republic of Korea" : addresses[i % addresses.length],
+      deliveryMethod: deliveryMethods[i % deliveryMethods.length],
+      shipBy: new Date(date.getTime() + 2 * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+      deliverBy: new Date(date.getTime() + 5 * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+      sla: (status === "pending" || status === "confirmed") ? slaState.sla : "ok",
+      slaText: (status === "pending" || status === "confirmed") ? slaState.text : undefined,
+      payment: payments[i % payments.length],
+      amount: isCoupang ? `₩${(15000 + i * 1000).toLocaleString()}` : `₹${(800 + i * 50).toLocaleString()}`,
+      status,
+      fulfillment,
+      marketplace: mp,
+      awbNumber: status === "shipped" || status === "packed" ? `AWB${748758448 + i}` : undefined,
+      awbCarrier: status === "shipped" || status === "packed" ? (i % 2 === 0 ? "Delhivery" : "BlueDart") : undefined,
+    })
   }
   return orders
 }
 
 const allMockOrders = generateMockOrders()
 
-// ─── Marketplace-aware filter config ──────────────────────────────
-function hasShippingFilter(mp: MarketplaceId) {
-  return mp !== "coupang"
-}
-function hasPaymentFilter(mp: MarketplaceId) {
-  return mp !== "coupang"
-}
+// ─── Quick Filter Tabs ────────────────────────────────────────────
+type QuickFilterKey = "all" | "pending_fulfillment" | "shipped" | "cancelled" | "returns"
 
-// ─── Component ────────────────────────────────────────────────────
+const quickFilterTabs: { key: QuickFilterKey; label: string; icon: React.ElementType }[] = [
+  { key: "all", label: "All Orders", icon: ShoppingBag },
+  { key: "pending_fulfillment", label: "Pending Fulfillment", icon: Clock },
+  { key: "shipped", label: "Shipped", icon: Truck },
+  { key: "cancelled", label: "Cancelled", icon: XCircle },
+  { key: "returns", label: "Returns", icon: Undo2 },
+]
+
+const ITEMS_PER_PAGE = 10
+
+// ─── Main Component ───────────────────────────────────────────────
 export function OrdersPage() {
-  const [selectedChannel, setSelectedChannel] = useState<MarketplaceId>("amazon")
-  const [channelDropdownOpen, setChannelDropdownOpen] = useState(false)
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatusKey>("pending")
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<QuickFilterKey>("all")
+  const [marketplaceFilter, setMarketplaceFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [fulfillmentFilter, setFulfillmentFilter] = useState<string>("all")
+  const [dateFilter, setDateFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null)
-  const [searchType, setSearchType] = useState("Order ID")
-  const [searchTypeOpen, setSearchTypeOpen] = useState(false)
-
-  // Filter state
-  const [shippingMethod, setShippingMethod] = useState("all")
-  const [paymentType, setPaymentType] = useState("all")
-
-  // Modal state
-  const [showModal, setShowModal] = useState(false)
-  const [modalOrder, setModalOrder] = useState<OrderItem | null>(null)
-
-  // Drawer state
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
   const [drawerOrder, setDrawerOrder] = useState<OrderItem | null>(null)
 
-  const channelRef = useRef<HTMLDivElement>(null)
-  const searchTypeRef = useRef<HTMLDivElement>(null)
-
-  // Reset status when channel changes
+  // Reset page on filter change
   useEffect(() => {
-    const statuses = statusBarConfig[selectedChannel]
-    if (statuses.length > 0) {
-      setSelectedStatus(statuses[0].key)
-    }
+    setCurrentPage(1)
     setSelectedOrders(new Set())
-    setActiveQuickFilter(null)
-  }, [selectedChannel])
+  }, [activeTab, marketplaceFilter, statusFilter, fulfillmentFilter, dateFilter, searchQuery])
 
-  // Close dropdowns on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (channelRef.current && !channelRef.current.contains(e.target as Node)) setChannelDropdownOpen(false)
-      if (searchTypeRef.current && !searchTypeRef.current.contains(e.target as Node)) setSearchTypeOpen(false)
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
+  // ─── Computed counts ──────────────────────────────────────────
+  const counts = useMemo(() => {
+    const all = allMockOrders.length
+    const pendingFulfillment = allMockOrders.filter(o => o.fulfillment === "unfulfilled" || o.fulfillment === "partially_fulfilled").length
+    const shipped = allMockOrders.filter(o => o.status === "shipped").length
+    const cancelled = allMockOrders.filter(o => o.status === "cancelled").length
+    const returns = allMockOrders.filter(o => o.status === "returned").length
+    return { all, pending_fulfillment: pendingFulfillment, shipped, cancelled, returns }
   }, [])
 
-  const statuses = statusBarConfig[selectedChannel]
-  const isPacked = selectedStatus === "packed"
-
-  // Filter orders
+  // ─── Filter logic ─────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     return allMockOrders.filter((o) => {
-      if (o.marketplace !== selectedChannel) return false
-      if (o.status !== selectedStatus) return false
-      if (shippingMethod !== "all" && o.deliveryMethod.toLowerCase().replace(" ", "_") !== shippingMethod) return false
-      if (paymentType !== "all" && o.payment.toLowerCase() !== paymentType) return false
+      // Quick filter tab
+      if (activeTab === "pending_fulfillment" && o.fulfillment !== "unfulfilled" && o.fulfillment !== "partially_fulfilled") return false
+      if (activeTab === "shipped" && o.status !== "shipped") return false
+      if (activeTab === "cancelled" && o.status !== "cancelled") return false
+      if (activeTab === "returns" && o.status !== "returned") return false
+
+      // Dropdown filters
+      if (marketplaceFilter !== "all" && o.marketplace !== marketplaceFilter) return false
+      if (statusFilter !== "all" && o.status !== statusFilter) return false
+      if (fulfillmentFilter !== "all" && o.fulfillment !== fulfillmentFilter) return false
+
+      // Date filter
+      if (dateFilter !== "all") {
+        const now = new Date()
+        const dayMs = 86400000
+        if (dateFilter === "today" && (now.getTime() - o.orderDateRaw.getTime()) > dayMs) return false
+        if (dateFilter === "7days" && (now.getTime() - o.orderDateRaw.getTime()) > 7 * dayMs) return false
+        if (dateFilter === "30days" && (now.getTime() - o.orderDateRaw.getTime()) > 30 * dayMs) return false
+      }
+
+      // Search
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        return o.orderId.includes(q) || o.productTitle.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q)
+        return (
+          o.orderId.toLowerCase().includes(q) ||
+          o.customerName.toLowerCase().includes(q) ||
+          o.productSku.toLowerCase().includes(q) ||
+          o.productTitle.toLowerCase().includes(q)
+        )
       }
       return true
     })
-  }, [selectedChannel, selectedStatus, shippingMethod, paymentType, searchQuery])
+  }, [activeTab, marketplaceFilter, statusFilter, fulfillmentFilter, dateFilter, searchQuery])
+
+  // ─── Pagination ───────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ITEMS_PER_PAGE))
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredOrders, currentPage])
 
   const toggleOrderSelect = useCallback((id: string) => {
-    setSelectedOrders((prev) => {
+    setSelectedOrders(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -301,285 +245,304 @@ export function OrdersPage() {
     })
   }, [])
 
-  const toggleAllOrders = useCallback(() => {
-    if (selectedOrders.size === filteredOrders.length) {
-      setSelectedOrders(new Set())
+  const toggleAllOnPage = useCallback(() => {
+    const pageIds = paginatedOrders.map(o => o.id)
+    const allSelected = pageIds.every(id => selectedOrders.has(id))
+    if (allSelected) {
+      setSelectedOrders(prev => {
+        const next = new Set(prev)
+        pageIds.forEach(id => next.delete(id))
+        return next
+      })
     } else {
-      setSelectedOrders(new Set(filteredOrders.map((o) => o.id)))
+      setSelectedOrders(prev => {
+        const next = new Set(prev)
+        pageIds.forEach(id => next.add(id))
+        return next
+      })
     }
-  }, [filteredOrders, selectedOrders.size])
+  }, [paginatedOrders, selectedOrders])
 
-  const openModal = (order: OrderItem) => {
-    setModalOrder(order)
-    setShowModal(true)
+  const allOnPageSelected = paginatedOrders.length > 0 && paginatedOrders.every(o => selectedOrders.has(o.id))
+
+  const hasActiveFilters = marketplaceFilter !== "all" || statusFilter !== "all" || fulfillmentFilter !== "all" || dateFilter !== "all" || searchQuery !== ""
+
+  const clearFilters = () => {
+    setMarketplaceFilter("all")
+    setStatusFilter("all")
+    setFulfillmentFilter("all")
+    setDateFilter("all")
+    setSearchQuery("")
   }
-
-  const ChannelLogo = marketplaceLogos[selectedChannel]?.Logo
 
   return (
     <div className="space-y-5" data-testid="orders-page">
-      {/* Page Title */}
-      <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="orders-title">
-        Manage orders
-      </h1>
-
-      {/* Channel Selector Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        {/* Select channel */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground font-medium">Select channel</span>
-          <div ref={channelRef} className="relative">
-            <button
-              data-testid="channel-selector-btn"
-              onClick={() => setChannelDropdownOpen(!channelDropdownOpen)}
-              className={cn(
-                "flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 text-sm font-medium transition-all shadow-sm min-w-[160px]",
-                channelDropdownOpen ? "border-primary bg-primary/5" : "border-border bg-white hover:border-primary/40"
-              )}
-            >
-              {ChannelLogo && <ChannelLogo className="h-3.5" />}
-              <span className="ml-1 text-xs font-semibold text-muted-foreground bg-muted rounded px-1.5 py-0.5 tabular-nums">
-                {marketplaceChannels.find((c) => c.id === selectedChannel)?.orderCount}
-              </span>
-              <ChevronDown className={cn("size-4 text-muted-foreground ml-auto transition-transform", channelDropdownOpen && "rotate-180")} />
-            </button>
-
-            {channelDropdownOpen && (
-              <div
-                data-testid="channel-dropdown"
-                className="absolute top-full left-0 mt-1.5 w-56 bg-white border border-border rounded-xl shadow-xl p-1.5 z-30 animate-fade-up"
-              >
-                {marketplaceChannels.map((ch) => {
-                  const Logo = marketplaceLogos[ch.id]?.Logo
-                  return (
-                    <button
-                      key={ch.id}
-                      data-testid={`channel-${ch.id}`}
-                      onClick={() => { setSelectedChannel(ch.id); setChannelDropdownOpen(false) }}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
-                        selectedChannel === ch.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        {Logo && <Logo className="h-3.5" />}
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">{ch.orderCount}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Last refresh */}
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="orders-title">
+            Orders
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage and track orders across all your marketplaces
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Last data refresh 15 mins ago</span>
+            <span>Last synced 5 mins ago</span>
             <button data-testid="refresh-btn" className="flex items-center gap-1 text-primary font-medium hover:underline">
               <RefreshCw className="size-3" />
-              Refresh now
+              Sync now
             </button>
           </div>
+          <Button variant="outline" size="sm" className="gap-1.5 ml-2" data-testid="export-all-btn">
+            <Download className="size-3.5" />
+            Export
+          </Button>
         </div>
+      </div>
 
-        {/* Right side: Search type + Search */}
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <div ref={searchTypeRef} className="relative">
+      {/* Quick Filter Tabs */}
+      <div className="flex items-center gap-1 border-b border-border" data-testid="quick-filter-tabs">
+        {quickFilterTabs.map(tab => {
+          const isActive = activeTab === tab.key
+          const Icon = tab.icon
+          const count = counts[tab.key]
+          return (
             <button
-              data-testid="search-type-btn"
-              onClick={() => setSearchTypeOpen(!searchTypeOpen)}
-              className="flex items-center gap-1 rounded-lg border border-border bg-white px-3 py-2 text-sm hover:bg-muted/50"
+              key={tab.key}
+              data-testid={`tab-${tab.key}`}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
-              <span>{searchType}</span>
-              <ChevronDown className="size-3.5 text-muted-foreground" />
+              <Icon className="size-4" />
+              <span>{tab.label}</span>
+              <span className={cn(
+                "text-xs font-semibold tabular-nums rounded-full px-2 py-0.5",
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {count}
+              </span>
+              {isActive && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-full" />
+              )}
             </button>
-            {searchTypeOpen && (
-              <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-border rounded-lg shadow-lg p-1 z-20">
-                {["Order ID", "Product", "Customer"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => { setSearchType(t); setSearchTypeOpen(false) }}
-                    className={cn("w-full text-left px-3 py-1.5 text-sm rounded-md", searchType === t ? "bg-primary/10 text-primary" : "hover:bg-muted")}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          )
+        })}
+      </div>
+
+      {/* Search + Filters Row */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3" data-testid="filters-row">
+        {/* Search */}
+        <div className="flex-1 max-w-sm">
+          <label className="text-[11px] text-muted-foreground font-medium block mb-1.5">Search orders</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               data-testid="order-search-input"
-              placeholder="Search order"
+              placeholder="Order ID, customer, SKU, or product..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 pl-9 w-48"
+              className="h-9 pl-9"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Status Bar */}
-      <div className="flex flex-wrap gap-2" data-testid="status-bar">
-        {statuses.map((s) => (
-          <button
-            key={s.key}
-            data-testid={`status-tab-${s.key}`}
-            onClick={() => { setSelectedStatus(s.key); setSelectedOrders(new Set()) }}
-            className={cn(
-              "flex flex-col items-start rounded-lg border-2 px-4 py-3 min-w-[110px] transition-all",
-              selectedStatus === s.key
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-border bg-white hover:border-primary/30"
-            )}
-          >
-            <span className={cn("text-xs font-medium", selectedStatus === s.key ? "text-primary" : "text-muted-foreground")}>
-              {s.label}
-            </span>
-            <span className={cn("text-xl font-bold tabular-nums mt-0.5", selectedStatus === s.key ? "text-primary" : "text-foreground")}>
-              {s.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Filters Row */}
-      <div className="flex flex-wrap items-center gap-3" data-testid="filters-row">
-        {hasShippingFilter(selectedChannel) && (
-          <FilterSelect
-            testId="shipping-filter"
-            label="Shipping method"
-            value={shippingMethod}
-            onChange={setShippingMethod}
-            options={[
-              { value: "all", label: "Self ship" },
-              { value: "self_ship", label: "Self ship" },
-              { value: "easy_ship", label: "Easy ship" },
-            ]}
-          />
-        )}
-
-        <FilterSelect
+        {/* Filter Dropdowns */}
+        <FilterDropdown
+          testId="marketplace-filter"
+          label="Marketplace"
+          value={marketplaceFilter}
+          onChange={setMarketplaceFilter}
+          options={[
+            { value: "all", label: "All Marketplaces" },
+            ...marketplaces.map(mp => ({ value: mp, label: marketplaceNames[mp] ?? mp })),
+          ]}
+        />
+        <FilterDropdown
+          testId="status-filter"
+          label="Order Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "all", label: "All Statuses" },
+            { value: "pending", label: "Pending" },
+            { value: "confirmed", label: "Confirmed" },
+            { value: "packed", label: "Packed" },
+            { value: "shipped", label: "Shipped" },
+            { value: "delivered", label: "Delivered" },
+            { value: "cancelled", label: "Cancelled" },
+            { value: "returned", label: "Returned" },
+          ]}
+        />
+        <FilterDropdown
+          testId="fulfillment-filter"
+          label="Fulfillment"
+          value={fulfillmentFilter}
+          onChange={setFulfillmentFilter}
+          options={[
+            { value: "all", label: "All" },
+            { value: "unfulfilled", label: "Unfulfilled" },
+            { value: "fulfilled", label: "Fulfilled" },
+            { value: "partially_fulfilled", label: "Partial" },
+          ]}
+        />
+        <FilterDropdown
           testId="date-filter"
-          label="Date"
-          value="all"
-          onChange={() => {}}
-          options={[{ value: "all", label: "Till date" }]}
+          label="Date Range"
+          value={dateFilter}
+          onChange={setDateFilter}
+          options={[
+            { value: "all", label: "All Time" },
+            { value: "today", label: "Today" },
+            { value: "7days", label: "Last 7 days" },
+            { value: "30days", label: "Last 30 days" },
+          ]}
         />
 
-        {hasPaymentFilter(selectedChannel) && (
-          <FilterSelect
-            testId="payment-filter"
-            label="Payment type"
-            value={paymentType}
-            onChange={setPaymentType}
-            options={[
-              { value: "all", label: "Select payment" },
-              { value: "prepaid", label: "Prepaid" },
-              { value: "cod", label: "COD" },
-            ]}
-          />
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium pb-0.5 shrink-0"
+            data-testid="clear-filters-btn"
+          >
+            <RotateCcw className="size-3" />
+            Clear filters
+          </button>
         )}
-
-        <FilterSelect
-          testId="sku-filter"
-          label="SKU"
-          value="all"
-          onChange={() => {}}
-          options={[{ value: "all", label: "Select SKU" }]}
-        />
-
-        <Button data-testid="search-filters-btn" className="h-9 px-6 rounded-lg font-medium">
-          Search
-        </Button>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
-        <span className="text-xs text-muted-foreground font-medium mr-1">Quick filters:</span>
-        {quickFilters.map((qf) => (
-          <button
-            key={qf}
-            data-testid={`quick-filter-${qf.toLowerCase().replace(/ /g, "-")}`}
-            onClick={() => setActiveQuickFilter(activeQuickFilter === qf ? null : qf)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-              activeQuickFilter === qf
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-white text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {qf}
-          </button>
-        ))}
+      {/* Results count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground" data-testid="results-count">
+          Showing <span className="font-semibold text-foreground tabular-nums">{filteredOrders.length}</span> orders
+          {hasActiveFilters && " (filtered)"}
+        </p>
       </div>
 
       {/* Orders Table */}
       <Card className="overflow-hidden" data-testid="orders-table">
-        {isPacked ? <PackedTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} /> : <PendingTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />}
+        {/* Table Header */}
+        <div className="hidden lg:grid grid-cols-[40px_110px_56px_240px_150px_100px_100px_100px_80px_60px] gap-3 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+          <div className="flex items-center justify-center">
+            <OrderCheckbox checked={allOnPageSelected} onChange={toggleAllOnPage} testId="select-all-checkbox" />
+          </div>
+          <span>Order ID</span>
+          <span>Source</span>
+          <span>Product</span>
+          <span>Customer</span>
+          <span>Date</span>
+          <span>Status</span>
+          <span>Fulfillment</span>
+          <span>Amount</span>
+          <span></span>
+        </div>
 
+        {/* Table Body */}
         <div className="divide-y divide-border">
-          {filteredOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground" data-testid="no-orders">
-              <Package className="size-10 mb-3 opacity-40" />
+          {paginatedOrders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" data-testid="no-orders">
+              <Package className="size-12 mb-4 opacity-30" />
               <p className="text-sm font-medium">No orders found</p>
-              <p className="text-xs mt-1">Try adjusting your filters</p>
+              <p className="text-xs mt-1 max-w-xs text-center">Try adjusting your search or filters to find what you're looking for</p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={clearFilters}>
+                  <RotateCcw className="size-3" />
+                  Clear all filters
+                </Button>
+              )}
             </div>
           ) : (
-            filteredOrders.map((order) =>
-              isPacked ? (
-                <PackedOrderRow
-                  key={order.id}
-                  order={order}
-                  checked={selectedOrders.has(order.id)}
-                  onToggle={() => toggleOrderSelect(order.id)}
-                  onOpenDrawer={() => setDrawerOrder(order)}
-                />
-              ) : (
-                <PendingOrderRow
-                  key={order.id}
-                  order={order}
-                  checked={selectedOrders.has(order.id)}
-                  onToggle={() => toggleOrderSelect(order.id)}
-                  onAction={() => openModal(order)}
-                  onOpenDrawer={() => setDrawerOrder(order)}
-                />
-              )
-            )
+            paginatedOrders.map(order => (
+              <OrderRow
+                key={order.id}
+                order={order}
+                checked={selectedOrders.has(order.id)}
+                onToggle={() => toggleOrderSelect(order.id)}
+                onOpenDrawer={() => setDrawerOrder(order)}
+              />
+            ))
           )}
         </div>
+
+        {/* Pagination */}
+        {filteredOrders.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/10" data-testid="pagination">
+            <p className="text-xs text-muted-foreground tabular-nums">
+              Page {currentPage} of {totalPages} &middot; {filteredOrders.length} total orders
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                data-testid="prev-page-btn"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              {generatePageNumbers(currentPage, totalPages).map((page, i) =>
+                page === "..." ? (
+                  <span key={`ellipsis-${i}`} className="px-1 text-muted-foreground text-xs">...</span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 w-8 p-0 text-xs"
+                    onClick={() => setCurrentPage(page as number)}
+                    data-testid={`page-${page}-btn`}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                data-testid="next-page-btn"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* Bottom Action Bar */}
-      <ActionBar
-        selectedCount={selectedOrders.size}
-        marketplace={selectedChannel}
-        isPacked={isPacked}
-      />
-
-      {/* Modal */}
-      {showModal && modalOrder && (
-        <OrderModal
-          order={modalOrder}
-          marketplace={selectedChannel}
-          onClose={() => { setShowModal(false); setModalOrder(null) }}
-        />
+      {/* Bulk Action Bar */}
+      {selectedOrders.size > 0 && (
+        <BulkActionBar count={selectedOrders.size} onClear={() => setSelectedOrders(new Set())} />
       )}
 
       {/* Order Detail Drawer */}
       {drawerOrder && (
-        <OrderDetailDrawer
-          order={drawerOrder}
-          onClose={() => setDrawerOrder(null)}
-        />
+        <OrderDetailDrawer order={drawerOrder} onClose={() => setDrawerOrder(null)} />
       )}
     </div>
   )
 }
 
-// ─── Filter Select Component ──────────────────────────────────────
-function FilterSelect({ testId, label, value, onChange, options }: {
+// ─── Filter Dropdown ──────────────────────────────────────────────
+function FilterDropdown({ testId, label, value, onChange, options }: {
   testId: string
   label: string
   value: string
@@ -597,7 +560,8 @@ function FilterSelect({ testId, label, value, onChange, options }: {
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
 
-  const selected = options.find((o) => o.value === value) ?? options[0]
+  const selected = options.find(o => o.value === value) ?? options[0]
+  const isFiltered = value !== "all"
 
   return (
     <div className="flex flex-col gap-1">
@@ -606,18 +570,27 @@ function FilterSelect({ testId, label, value, onChange, options }: {
         <button
           data-testid={testId}
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-1.5 text-sm hover:bg-muted/50 min-w-[130px]"
+          className={cn(
+            "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm min-w-[130px] transition-all",
+            isFiltered
+              ? "border-primary bg-primary/5 text-primary font-medium"
+              : "border-border bg-white text-foreground hover:bg-muted/50"
+          )}
         >
-          <span className="flex-1 text-left text-foreground">{selected.label}</span>
-          <ChevronDown className="size-3.5 text-muted-foreground" />
+          <span className="flex-1 text-left truncate">{selected.label}</span>
+          <ChevronDown className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-180", isFiltered ? "text-primary" : "text-muted-foreground")} />
         </button>
         {open && (
-          <div className="absolute top-full left-0 mt-1 w-full bg-white border border-border rounded-lg shadow-lg p-1 z-20">
-            {options.map((opt) => (
+          <div className="absolute top-full left-0 mt-1 w-full min-w-[160px] bg-white border border-border rounded-xl shadow-xl p-1 z-30 animate-fade-up">
+            {options.map(opt => (
               <button
                 key={opt.value}
+                data-testid={`${testId}-${opt.value}`}
                 onClick={() => { onChange(opt.value); setOpen(false) }}
-                className={cn("w-full text-left px-3 py-1.5 text-sm rounded-md", value === opt.value ? "bg-primary/10 text-primary" : "hover:bg-muted")}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                  value === opt.value ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"
+                )}
               >
                 {opt.label}
               </button>
@@ -629,42 +602,8 @@ function FilterSelect({ testId, label, value, onChange, options }: {
   )
 }
 
-// ─── Table Headers ────────────────────────────────────────────────
-function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
-  return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
-      <div className="flex items-center justify-center">
-        <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
-      </div>
-      <span>Order date</span>
-      <span>Order details</span>
-      <span>Product details</span>
-      <span>Customer details</span>
-      <span>Delivery details</span>
-      <span>Payment</span>
-      <span>Status</span>
-    </div>
-  )
-}
-
-function PackedTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
-  return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
-      <div className="flex items-center justify-center">
-        <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
-      </div>
-      <span>Order date</span>
-      <span>Product details</span>
-      <span>Customer details</span>
-      <span>Handover date</span>
-      <span>AWB number</span>
-      <span>Status</span>
-    </div>
-  )
-}
-
 // ─── Checkbox ─────────────────────────────────────────────────────
-function Checkbox({ checked, onChange, testId }: { checked: boolean; onChange: () => void; testId: string }) {
+function OrderCheckbox({ checked, onChange, testId }: { checked: boolean; onChange: () => void; testId: string }) {
   return (
     <button
       data-testid={testId}
@@ -679,357 +618,168 @@ function Checkbox({ checked, onChange, testId }: { checked: boolean; onChange: (
   )
 }
 
-// ─── Pending Order Row ────────────────────────────────────────────
-function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
-  order: OrderItem; checked: boolean; onToggle: () => void; onAction: () => void; onOpenDrawer: () => void
+// ─── Order Row ────────────────────────────────────────────────────
+function OrderRow({ order, checked, onToggle, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
 }) {
   const MpLogo = marketplaceLogos[order.marketplace]?.Logo
+
   return (
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
-        checked && "bg-primary/5"
+        "grid grid-cols-1 lg:grid-cols-[40px_110px_56px_240px_150px_100px_100px_100px_80px_60px] gap-2 lg:gap-3 px-4 py-3.5 items-center hover:bg-muted/20 transition-colors cursor-pointer",
+        checked && "bg-primary/[0.03]"
       )}
+      onClick={onOpenDrawer}
     >
       {/* Checkbox */}
-      <div className="flex items-start justify-center pt-1">
-        <Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} />
+      <div className="flex items-center justify-center" onClick={e => e.stopPropagation()}>
+        <OrderCheckbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} />
       </div>
 
-      {/* Order date */}
-      <div className="text-xs text-muted-foreground overflow-hidden">
-        <p className="font-medium text-foreground truncate">{order.timeAgo}</p>
-        <p className="whitespace-pre-line mt-0.5">{order.orderDate}</p>
-      </div>
-
-      {/* Order details */}
+      {/* Order ID */}
       <div className="text-xs overflow-hidden">
-        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>
+        <span className="text-primary font-semibold tabular-nums truncate block" data-testid={`order-link-${order.id}`}>
           {order.orderId}
-        </button>
-        <p className="text-muted-foreground mt-0.5 truncate">{order.fulfillment}</p>
+        </span>
+      </div>
+
+      {/* Marketplace */}
+      <div className="flex items-center" data-testid={`order-marketplace-${order.id}`}>
         {MpLogo && (
-          <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 mt-1", marketplaceLogos[order.marketplace]?.bgColor)}>
+          <span className={cn(
+            "inline-flex items-center justify-center rounded-md border size-8",
+            marketplaceLogos[order.marketplace]?.bgColor
+          )} title={marketplaceNames[order.marketplace]}>
             <MpLogo className="h-2.5" />
           </span>
         )}
       </div>
 
-      {/* Product details */}
-      <div className="flex items-start gap-3 min-w-0">
-        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-          <ImageIcon className="size-5 text-muted-foreground" />
+      {/* Product */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="size-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <ImageIcon className="size-4 text-muted-foreground/60" />
         </div>
-        <div className="text-xs min-w-0">
-          <a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a>
-          <p className="text-muted-foreground mt-0.5">Quantity : {order.quantity}</p>
-          <p className="text-muted-foreground truncate">SKU : {order.productCategory}</p>
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-foreground truncate leading-snug">{order.productTitle}</p>
+          <p className="text-[11px] text-muted-foreground truncate mt-0.5">SKU: {order.productSku} &middot; Qty: {order.quantity}</p>
         </div>
       </div>
 
-      {/* Customer details */}
+      {/* Customer */}
       <div className="text-xs overflow-hidden">
         <p className="font-medium text-foreground truncate">{order.customerName}</p>
-        <p className="text-muted-foreground truncate">{order.customerPhone}</p>
-        <p className="text-muted-foreground mt-0.5 truncate">{order.customerAddress}</p>
+        <p className="text-muted-foreground truncate mt-0.5">{order.customerAddress.split(",")[0]}</p>
       </div>
 
-      {/* Delivery details */}
-      <div className="text-xs overflow-hidden">
-        <p className="font-medium text-foreground truncate">{order.deliveryMethod}</p>
-        <p className="text-muted-foreground truncate">Ship by : {order.shipBy}</p>
-        <p className="text-muted-foreground truncate">Deliver by : {order.deliverBy}</p>
-        {order.sla === "breached" && (
-          <span className="inline-block mt-1 text-[10px] font-semibold text-red-600 bg-red-50 rounded px-1.5 py-0.5" data-testid={`sla-breached-${order.id}`}>
-            {order.slaText}
-          </span>
-        )}
-        {order.sla === "warning" && (
-          <span className="inline-block mt-1 text-[10px] font-semibold text-amber-700 bg-amber-50 rounded px-1.5 py-0.5" data-testid={`sla-warning-${order.id}`}>
-            {order.slaText}
-          </span>
-        )}
-      </div>
-
-      {/* Payment */}
-      <div className="text-xs">
-        <p className="font-medium text-foreground">{order.payment}</p>
-        <p className="font-semibold text-foreground tabular-nums">{order.amount}</p>
+      {/* Date */}
+      <div className="text-xs text-muted-foreground tabular-nums">
+        {order.orderDate}
       </div>
 
       {/* Status */}
       <div>
-        <span className={cn(
-          "inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border",
-          order.status === "pending" || order.status === "new"
-            ? "text-amber-700 bg-amber-50 border-amber-200"
-            : order.status === "accepted"
-            ? "text-blue-700 bg-blue-50 border-blue-200"
-            : "text-muted-foreground bg-muted border-border"
-        )}>
-          {order.status === "new" ? "New" : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// ─── Packed Order Row ─────────────────────────────────────────────
-function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
-  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
-}) {
-  return (
-    <div
-      data-testid={`order-row-${order.id}`}
-      className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
-        checked && "bg-primary/5"
-      )}
-    >
-      {/* Checkbox */}
-      <div className="flex items-start justify-center pt-1">
-        <Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} />
+        <StatusBadge status={order.status} />
       </div>
 
-      {/* Order date */}
-      <div className="text-xs text-muted-foreground overflow-hidden">
-        <p className="font-medium text-foreground truncate">{order.timeAgo}</p>
-        <p className="whitespace-pre-line mt-0.5">{order.orderDate}</p>
-      </div>
-
-      {/* Product details */}
-      <div className="flex items-start gap-3 min-w-0">
-        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={onOpenDrawer}>
-          <ImageIcon className="size-5 text-muted-foreground" />
-        </div>
-        <div className="text-xs min-w-0">
-          <a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a>
-          <p className="text-muted-foreground mt-0.5">Quantity : {order.quantity}</p>
-          <p className="text-muted-foreground truncate">SKU : {order.productCategory}</p>
-        </div>
-      </div>
-
-      {/* Customer details */}
-      <div className="text-xs overflow-hidden">
-        <p className="font-medium text-foreground truncate">{order.customerName}</p>
-        <p className="text-muted-foreground truncate">{order.customerPhone}</p>
-        <p className="text-muted-foreground mt-0.5 truncate">{order.customerAddress}</p>
-      </div>
-
-      {/* Handover date */}
-      <div className="text-xs overflow-hidden">
-        <p className="font-semibold text-foreground truncate">{order.handoverCountdown}</p>
-        <p className="text-muted-foreground mt-0.5 truncate">{order.handoverDate}</p>
-        {order.sla === "breached" && (
-          <span className="inline-block mt-1 text-[10px] font-semibold text-red-600 bg-red-50 rounded px-1.5 py-0.5">
-            SLA breached
-          </span>
-        )}
-      </div>
-
-      {/* AWB number */}
-      <div className="text-xs overflow-hidden">
-        <a href="#" className="text-primary font-medium hover:underline tabular-nums truncate block">{order.awbNumber}</a>
-        <p className="text-muted-foreground mt-0.5 truncate">{order.awbCarrier}</p>
-      </div>
-
-      {/* Label Status */}
+      {/* Fulfillment */}
       <div>
-        <span className={cn(
-          "inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border whitespace-nowrap",
-          order.labelStatus === "printed"
-            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-            : "text-amber-700 bg-amber-50 border-amber-200"
-        )}>
-          {order.labelStatus === "printed" ? "Labels printed" : "Labels pending"}
-        </span>
+        <FulfillmentBadge fulfillment={order.fulfillment} />
+      </div>
+
+      {/* Amount */}
+      <div className="text-xs font-semibold text-foreground tabular-nums">
+        {order.amount}
+      </div>
+
+      {/* Arrow */}
+      <div className="flex items-center justify-center">
+        <ChevronRight className="size-4 text-muted-foreground/50" />
       </div>
     </div>
   )
 }
 
-// ─── Bottom Action Bar ────────────────────────────────────────────
-function ActionBar({ selectedCount, marketplace, isPacked }: {
-  selectedCount: number; marketplace: MarketplaceId; isPacked: boolean
-}) {
-  const isCoupang = marketplace === "coupang"
+// ─── Status Badge ─────────────────────────────────────────────────
+function StatusBadge({ status }: { status: OrderStatusKey }) {
+  const config: Record<OrderStatusKey, { label: string; className: string }> = {
+    pending: { label: "Pending", className: "text-amber-700 bg-amber-50 border-amber-200" },
+    confirmed: { label: "Confirmed", className: "text-blue-700 bg-blue-50 border-blue-200" },
+    packed: { label: "Packed", className: "text-violet-700 bg-violet-50 border-violet-200" },
+    shipped: { label: "Shipped", className: "text-sky-700 bg-sky-50 border-sky-200" },
+    delivered: { label: "Delivered", className: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+    cancelled: { label: "Cancelled", className: "text-red-700 bg-red-50 border-red-200" },
+    returned: { label: "Returned", className: "text-orange-700 bg-orange-50 border-orange-200" },
+  }
+  const c = config[status]
+  return (
+    <span className={cn("inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border whitespace-nowrap", c.className)} data-testid={`status-badge-${status}`}>
+      {c.label}
+    </span>
+  )
+}
 
+// ─── Fulfillment Badge ────────────────────────────────────────────
+function FulfillmentBadge({ fulfillment }: { fulfillment: FulfillmentStatus }) {
+  const config: Record<FulfillmentStatus, { label: string; className: string }> = {
+    unfulfilled: { label: "Unfulfilled", className: "text-amber-700 bg-amber-50/60 border-amber-200/60" },
+    fulfilled: { label: "Fulfilled", className: "text-emerald-700 bg-emerald-50/60 border-emerald-200/60" },
+    partially_fulfilled: { label: "Partial", className: "text-violet-700 bg-violet-50/60 border-violet-200/60" },
+  }
+  const c = config[fulfillment]
+  return (
+    <span className={cn("inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border whitespace-nowrap", c.className)} data-testid={`fulfillment-badge-${fulfillment}`}>
+      {c.label}
+    </span>
+  )
+}
+
+// ─── Bulk Action Bar ──────────────────────────────────────────────
+function BulkActionBar({ count, onClear }: { count: number; onClear: () => void }) {
   return (
     <div
-      data-testid="action-bar"
-      className="sticky bottom-0 flex items-center justify-between rounded-xl border border-border bg-white px-5 py-3 shadow-lg"
+      data-testid="bulk-action-bar"
+      className="sticky bottom-4 mx-auto max-w-3xl flex items-center justify-between rounded-xl border border-border bg-white px-5 py-3 shadow-xl animate-fade-up"
     >
-      <span className="text-sm text-muted-foreground" data-testid="selected-count">
-        Action on {selectedCount} selected orders:
-      </span>
-
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-foreground tabular-nums" data-testid="selected-count">
+          {count} selected
+        </span>
+        <button onClick={onClear} className="text-xs text-muted-foreground hover:text-foreground font-medium">
+          Deselect all
+        </button>
+      </div>
       <div className="flex items-center gap-2">
-        {isPacked ? (
-          <>
-            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-print-labels">
-              <Printer className="size-3.5" />
-              Print labels
-            </Button>
-            <Button size="sm" className="gap-1.5" data-testid="action-create-manifest">
-              <FileText className="size-3.5" />
-              Create manifest
-            </Button>
-          </>
-        ) : (
-          <>
-            {!isCoupang && (
-              <>
-                <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
-                  <Download className="size-3.5" />
-                  Export
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-import">
-                  <Upload className="size-3.5" />
-                  Import
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5 opacity-50 cursor-not-allowed" disabled data-testid="action-split">
-                  <Scissors className="size-3.5" />
-                  Split orders
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-mark-oos">
-                  <CircleAlert className="size-3.5" />
-                  Mark OOS
-                </Button>
-              </>
-            )}
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel">
-              <X className="size-3.5" />
-              Cancel order
-            </Button>
-            <Button size="sm" className="gap-1.5" data-testid="action-confirm">
-              <Check className="size-3.5" />
-              Confirm order
-            </Button>
-          </>
-        )}
+        <Button variant="outline" size="sm" className="gap-1.5" data-testid="bulk-mark-fulfilled">
+          <PackageCheck className="size-3.5" />
+          Mark Fulfilled
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" data-testid="bulk-print-labels">
+          <Printer className="size-3.5" />
+          Print Labels
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" data-testid="bulk-export">
+          <Download className="size-3.5" />
+          Export
+        </Button>
       </div>
     </div>
   )
 }
 
-// ─── Order Modal ──────────────────────────────────────────────────
-function OrderModal({ order, marketplace, onClose }: {
-  order: OrderItem; marketplace: MarketplaceId; onClose: () => void
-}) {
-  const isFlipkart = marketplace === "flipkart"
-  const title = isFlipkart ? "Process labels" : "Schedule pickup"
-  const cta = isFlipkart ? "Process labels" : "Schedule pickup"
-  const ChannelLogo = marketplaceLogos[marketplace]?.Logo
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="order-modal-overlay" onClick={onClose}>
-      <div
-        data-testid="order-modal"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-4 animate-fade-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-2">
-          <h2 className="text-lg font-bold text-foreground font-heading">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors" data-testid="modal-close-btn">
-            <X className="size-5 text-muted-foreground" />
-          </button>
-        </div>
-
-        {/* Order Summary */}
-        <div className="px-6 py-3 border-b border-border">
-          <div className="flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-              <ImageIcon className="size-4 text-muted-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <a href="#" className="text-sm text-primary font-medium hover:underline line-clamp-2">{order.productTitle}</a>
-              <p className="text-xs text-muted-foreground mt-0.5">Quantity : {order.quantity}</p>
-              <p className="text-xs text-muted-foreground">Total amount : Rs.2,000</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs shrink-0">
-              <div>
-                <p className="text-muted-foreground mb-0.5">Channel</p>
-                {ChannelLogo && <ChannelLogo className="h-3.5" />}
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Shipment</p>
-                <p className="font-medium">SDGU00015</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Order ID</p>
-                <p className="font-medium tabular-nums">7895784974847</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Package Details */}
-        <div className="px-6 py-4 space-y-4">
-          <h3 className="text-sm font-bold text-foreground">Package details</h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Package weight (in grams)</label>
-              <Input data-testid="package-weight" defaultValue="400" className="h-9" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Package dimensions ( L x W x H in CM )</label>
-              <div className="flex gap-2">
-                <Input data-testid="package-length" defaultValue="17" className="h-9" />
-                <Input data-testid="package-width" defaultValue="15" className="h-9" />
-                <Input data-testid="package-height" defaultValue="7" className="h-9" />
-              </div>
-            </div>
-          </div>
-
-          {!isFlipkart && (
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Package identifier</label>
-              <Input data-testid="package-identifier" defaultValue="12554779587959" className="h-9" />
-            </div>
-          )}
-        </div>
-
-        {/* Pickup Slot */}
-        <div className="px-6 pb-4 space-y-4">
-          <h3 className="text-sm font-bold text-foreground">Pickup slot</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Pickup date</label>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-1.5 text-sm">
-                <span className="flex-1">1 Dec 2025</span>
-                <ChevronDown className="size-3.5 text-muted-foreground" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1.5">Pickup time</label>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-1.5 text-sm">
-                <span className="flex-1">11:00 AM - 2:00 PM</span>
-                <ChevronDown className="size-3.5 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Shipping Fee (Amazon only) */}
-        {!isFlipkart && (
-          <div className="px-6 pb-4">
-            <p className="text-xs text-muted-foreground">Total shipping fee</p>
-            <p className="text-sm font-bold text-foreground">Rs.70</p>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="px-6 pb-6">
-          <Button className="w-full h-10 rounded-lg font-medium" data-testid="modal-cta-btn" onClick={onClose}>
-            {cta}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
+// ─── Pagination Helper ────────────────────────────────────────────
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages: (number | "...")[] = [1]
+  if (current > 3) pages.push("...")
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push("...")
+  pages.push(total)
+  return pages
 }
 
 // ─── Order Detail Drawer ──────────────────────────────────────────
@@ -1045,19 +795,20 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
   const MpLogo = marketplaceLogos[order.marketplace]?.Logo
   const mpName = marketplaceNames[order.marketplace] ?? order.marketplace
 
-  // Close on escape key
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", handleKey)
     return () => document.removeEventListener("keydown", handleKey)
   }, [onClose])
 
-  const statusColor = order.status === "pending" || order.status === "new"
-    ? "bg-amber-100 text-amber-800 border-amber-200"
-    : order.status === "accepted"
-    ? "bg-blue-100 text-blue-800 border-blue-200"
-    : order.status === "packed"
-    ? "bg-violet-100 text-violet-800 border-violet-200"
+  const statusColor =
+    order.status === "pending" ? "bg-amber-100 text-amber-800 border-amber-200"
+    : order.status === "confirmed" ? "bg-blue-100 text-blue-800 border-blue-200"
+    : order.status === "packed" ? "bg-violet-100 text-violet-800 border-violet-200"
+    : order.status === "shipped" ? "bg-sky-100 text-sky-800 border-sky-200"
+    : order.status === "delivered" ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+    : order.status === "cancelled" ? "bg-red-100 text-red-800 border-red-200"
+    : order.status === "returned" ? "bg-orange-100 text-orange-800 border-orange-200"
     : "bg-muted text-muted-foreground border-border"
 
   const copyToClipboard = (text: string) => {
@@ -1079,7 +830,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
           <div className="flex items-center gap-3">
             <h2 className="text-base font-bold text-foreground font-heading" data-testid="drawer-title">Order Details</h2>
             <span className={cn("text-[10px] font-semibold rounded-full px-2 py-0.5 border", statusColor)}>
-              {order.status === "new" ? "New" : order.status.charAt(0).toUpperCase() + order.status.slice(1).replace("_", " ")}
+              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
             </span>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors" data-testid="drawer-close-btn">
@@ -1114,7 +865,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
                 </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">{order.timeAgo} &middot; {order.orderDate.replace("\n", ", ")}</p>
+            <p className="text-xs text-muted-foreground mt-2">{order.orderDate}</p>
           </div>
 
           {/* Product Info */}
@@ -1128,7 +879,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
                 <p className="text-sm font-medium text-foreground leading-snug">{order.productTitle}</p>
                 <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                   <span>Qty: <span className="font-medium text-foreground">{order.quantity}</span></span>
-                  <span>SKU: <span className="font-medium text-foreground">{order.productCategory}</span></span>
+                  <span>SKU: <span className="font-medium text-foreground">{order.productSku}</span></span>
                 </div>
               </div>
             </div>
@@ -1138,19 +889,15 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
           <div className="px-5 py-4 border-b border-border">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-4">Order Timeline</p>
             <div className="relative pl-6" data-testid="order-timeline">
-              {/* Vertical line */}
               <div className="absolute left-[11px] top-1 bottom-1 w-[2px] bg-border" />
               {timelineSteps.map((step, i) => {
                 const Icon = step.icon
                 const isLast = i === timelineSteps.length - 1
                 return (
                   <div key={step.key} className={cn("relative flex items-start gap-3 pb-5", isLast && "pb-0")} data-testid={`timeline-${step.key}`}>
-                    {/* Dot */}
                     <div className={cn(
                       "absolute -left-6 size-[22px] rounded-full flex items-center justify-center border-2 z-10",
-                      step.done
-                        ? "bg-primary border-primary"
-                        : "bg-white border-border"
+                      step.done ? "bg-primary border-primary" : "bg-white border-border"
                     )}>
                       <Icon className={cn("size-3", step.done ? "text-white" : "text-muted-foreground")} />
                     </div>
@@ -1190,11 +937,11 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
               <InfoCell label="Method" value={order.deliveryMethod} />
               <InfoCell label="Ship by" value={order.shipBy} />
               <InfoCell label="Deliver by" value={order.deliverBy} />
-              <InfoCell label="Fulfillment" value="Seller" />
+              <InfoCell label="Fulfillment" value={order.fulfillment === "fulfilled" ? "Fulfilled" : order.fulfillment === "partially_fulfilled" ? "Partial" : "Unfulfilled"} />
               {order.awbNumber && <InfoCell label="AWB Number" value={order.awbNumber} />}
               {order.awbCarrier && <InfoCell label="Carrier" value={order.awbCarrier} />}
             </div>
-            {order.sla !== "ok" && (
+            {order.sla !== "ok" && order.slaText && (
               <div className="mt-3">
                 <span className={cn(
                   "inline-flex items-center gap-1 text-xs font-semibold rounded px-2 py-1",
@@ -1205,17 +952,6 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderItem; onClose: () =
                 </span>
               </div>
             )}
-          </div>
-
-          {/* Packaging Details */}
-          <div className="px-5 py-4 border-b border-border">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-3">Package Details</p>
-            <div className="grid grid-cols-2 gap-3">
-              <InfoCell label="Weight" value="400g" />
-              <InfoCell label="Dimensions" value="17 x 15 x 7 cm" />
-              <InfoCell label="Package ID" value="SDGU00015" />
-              <InfoCell label="Shipment ID" value={`SHP-${order.orderId.slice(-6)}`} />
-            </div>
           </div>
 
           {/* Payment */}
