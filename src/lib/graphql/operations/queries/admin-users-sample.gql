@@ -1,0 +1,12 @@
+query AdminUsersSample {
+  adminUsers(first: 1) {
+    edges {
+      node {
+        id
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

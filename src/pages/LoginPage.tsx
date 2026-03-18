@@ -1,12 +1,28 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Eye, EyeOff, Store } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from 'react';
+
+import {
+  Eye,
+  EyeOff,
+  Store,
+} from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  getOAuthStartUrl,
+  login,
+  type OAuthProvider,
+} from '@/features/auth';
+import { authStorage } from '@/features/auth/lib/auth-storage';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -42,6 +58,8 @@ const FacebookIcon = () => (
 export function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -52,19 +70,42 @@ export function LoginPage() {
     defaultValues: { email: "", password: "", rememberMe: false },
   })
 
-  const onSubmit = () => {
-    navigate("/dashboard")
-  }
+  const handleSocialLogin = async (provider: OAuthProvider) => {
+    const result = await getOAuthStartUrl(provider);
+    if (result.ok) {
+      window.location.href = result.redirectUrl;
+      return;
+    }
+    toast.error(result.error);
+  };
+
+  const onSubmit = async (values: LoginValues) => {
+    setFormError(null);
+    setIsSubmitting(true);
+    const result = await login(values.email, values.password);
+    setIsSubmitting(false);
+    if (result.ok) {
+      authStorage.setSession(result.accessToken, result.userId);
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+    setFormError(result.error);
+  };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6" data-testid="login-page">
+    <div
+      className="min-h-screen bg-background flex items-center justify-center p-6"
+      data-testid="login-page"
+    >
       <div className="w-full max-w-md animate-fade-up">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
             <Store className="size-5 text-primary-foreground" />
           </div>
-          <span className="font-heading text-xl font-bold tracking-tight">SmartStore</span>
+          <span className="font-heading text-xl font-bold tracking-tight">
+            SmartStore
+          </span>
         </div>
 
         {/* Card */}
@@ -82,7 +123,9 @@ export function LoginPage() {
           {/* Social Buttons */}
           <div className="space-y-3 mb-6">
             <button
+              type="button"
               data-testid="login-google-btn"
+              onClick={() => handleSocialLogin("google")}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted hover:shadow-sm transition-all duration-200"
             >
               <GoogleIcon />
@@ -90,14 +133,18 @@ export function LoginPage() {
             </button>
             <div className="grid grid-cols-2 gap-3">
               <button
+                type="button"
                 data-testid="login-amazon-btn"
+                onClick={() => toast.info("Amazon login is not available yet.")}
                 className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted hover:shadow-sm transition-all duration-200"
               >
                 <AmazonIcon />
                 Amazon
               </button>
               <button
+                type="button"
                 data-testid="login-facebook-btn"
+                onClick={() => handleSocialLogin("meta")}
                 className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted hover:shadow-sm transition-all duration-200"
               >
                 <FacebookIcon />
@@ -112,12 +159,18 @@ export function LoginPage() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-muted-foreground font-medium">Or</span>
+              <span className="bg-white px-3 text-muted-foreground font-medium">
+                Or
+              </span>
             </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="login-form">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4"
+            data-testid="login-form"
+          >
             <div className="space-y-2">
               <Label htmlFor="login-email">Email</Label>
               <Input
@@ -131,7 +184,9 @@ export function LoginPage() {
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-xs text-destructive" role="alert">{errors.email.message}</p>
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -163,13 +218,25 @@ export function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-destructive" role="alert">{errors.password.message}</p>
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.password.message}
+                </p>
               )}
             </div>
+
+            {formError && (
+              <p className="text-sm text-destructive" role="alert">
+                {formError}
+              </p>
+            )}
 
             {/* Remember Me */}
             <div className="flex items-center gap-2">
@@ -180,7 +247,10 @@ export function LoginPage() {
                 className="size-4 rounded border-border text-primary focus:ring-primary/50 cursor-pointer"
                 {...register("rememberMe")}
               />
-              <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+              <Label
+                htmlFor="rememberMe"
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
                 Remember me
               </Label>
             </div>
@@ -188,9 +258,10 @@ export function LoginPage() {
             <Button
               type="submit"
               data-testid="login-submit-btn"
+              disabled={isSubmitting}
               className="w-full h-10 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all duration-200"
             >
-              Sign in
+              {isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
         </div>
@@ -207,5 +278,5 @@ export function LoginPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }

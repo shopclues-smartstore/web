@@ -1,0 +1,25 @@
+query SubscriptionPlans {
+  subscriptionPlans {
+    id
+    code
+    name
+    description
+    version
+    effectiveFrom
+    effectiveTo
+    isActive
+    sortOrder
+    entitlements {
+      key
+      valueType
+      valueInt
+      valueBool
+      valueText
+      valueJson
+      unit
+      description
+      order
+      displayType
+    }
+  }
+}

@@ -1,0 +1,5 @@
+mutation DisconnectAmazonSeller($input: DisconnectAmazonSellerInput!) {
+  disconnectAmazonSeller(input: $input) {
+    success
+  }
+}

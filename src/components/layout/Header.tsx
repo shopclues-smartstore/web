@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { apolloClient } from "@/lib/graphql/client"
+import { authStorage, logout } from "@/features/auth"
+import { toast } from "sonner"
 import {
   Bell,
   HelpCircle,
@@ -23,6 +26,7 @@ export function Header() {
   const [selectedStore, setSelectedStore] = useState(stores[0])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const storeRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -43,6 +47,21 @@ export function Header() {
     { id: 2, text: "New order on Amazon", time: "15m ago" },
     { id: 3, text: "Inventory alert: Widget Pro low stock", time: "1h ago" },
   ]
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    setUserMenuOpen(false)
+
+    const result = await logout(authStorage.getAccessToken())
+    authStorage.clear()
+    await apolloClient.clearStore().catch(() => undefined)
+    navigate("/login", { replace: true })
+
+    if (!result.ok) {
+      toast.error(result.error)
+    }
+  }
 
   return (
     <header
@@ -180,11 +199,14 @@ export function Header() {
               <div className="border-t border-border mt-1 pt-1">
                 <button
                   data-testid="user-menu-logout"
-                  onClick={() => navigate("/login")}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
+                  disabled={isLoggingOut}
+                  onClick={() => {
+                    void handleLogout()
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150"
                 >
                   <LogOut className="size-4" />
-                  Logout
+                  {isLoggingOut ? "Logging out..." : "Logout"}
                 </button>
               </div>
             </div>

@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { authStorage } from "@/features/auth/lib/auth-storage";
 
-const DEFAULT_REDIRECT = "/";
+/** Where to send the user after successful OAuth (matches OAUTH_FRONTEND_REDIRECT_URL usage). */
+const APP_HOME = "/dashboard";
 
 export function AuthCallbackPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"processing" | "success" | "error">(
-    "processing"
-  );
+  const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
-    const accessToken = searchParams.get("access_token");
-    const userId = searchParams.get("user_id");
-    const error = searchParams.get("error");
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("access_token");
+    const userId = params.get("user_id");
+    const error = params.get("error");
 
     if (error) {
       setErrorMessage(decodeURIComponent(error));
@@ -26,13 +25,13 @@ export function AuthCallbackPage() {
     if (accessToken && userId) {
       authStorage.setSession(accessToken, userId);
       setStatus("success");
-      navigate(DEFAULT_REDIRECT, { replace: true });
+      navigate(APP_HOME, { replace: true });
       return;
     }
 
     setErrorMessage("Missing access token or user ID.");
     setStatus("error");
-  }, [searchParams, navigate]);
+  }, [navigate]);
 
   if (status === "processing") {
     return (
@@ -56,12 +55,20 @@ export function AuthCallbackPage() {
             Sign-in failed
           </h1>
           <p className="mb-4 text-sm text-muted-foreground">{errorMessage}</p>
-          <a
-            href="/signup"
-            className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline"
-          >
-            Back to sign up
-          </a>
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+            <a
+              href="/login"
+              className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline"
+            >
+              Back to login
+            </a>
+            <a
+              href="/signup"
+              className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline"
+            >
+              Back to sign up
+            </a>
+          </div>
         </div>
       </div>
     );
