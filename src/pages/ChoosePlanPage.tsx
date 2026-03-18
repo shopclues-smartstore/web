@@ -19,6 +19,7 @@ import { useViewerBootstrap } from "@/features/auth/hooks";
 import {
   useSubscriptionPlansQuery,
   useCreateWorkspaceSubscriptionMutation,
+  useAdvanceOnboardingStepMutation,
   type SubscriptionPlanCode,
 } from "@/lib/graphql/generated/types";
 
@@ -56,9 +57,9 @@ export function ChoosePlanPage() {
   });
 
   const [createSubscription, { loading: creatingSubscription }] =
-    useCreateWorkspaceSubscriptionMutation({
-      errorPolicy: "all",
-    });
+    useCreateWorkspaceSubscriptionMutation({ errorPolicy: "all" });
+
+  const [advanceOnboardingStep] = useAdvanceOnboardingStepMutation();
 
   const plans = useMemo(() => {
     if (!data?.subscriptionPlans) return [];
@@ -129,6 +130,9 @@ export function ChoosePlanPage() {
       });
 
       if (result.data?.createWorkspaceSubscription?.subscription) {
+        await advanceOnboardingStep({
+          variables: { input: { workspaceId: workspace.id, completedStep: "PLAN_SELECT" } },
+        });
         toast.success(`${selectedPlan.name} plan activated successfully!`);
         navigate("/onboarding/connect-marketplace");
       } else if (result.error) {

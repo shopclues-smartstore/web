@@ -1,0 +1,6 @@
+mutation AdvanceOnboardingStep($input: AdvanceOnboardingStepInput!) {
+  advanceOnboardingStep(input: $input) {
+    currentStep
+    status
+  }
+}

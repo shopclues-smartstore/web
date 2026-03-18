@@ -19,11 +19,13 @@ import {
 import {
   getOnboardingSteps,
   OnboardingLayout,
-} from '@/components/onboarding/OnboardingLayout';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/onboarding/OnboardingLayout";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useViewerBootstrap } from "@/features/auth/hooks/useViewerBootstrap";
+import { useAmazonConnect } from "@/features/workspace/hooks/useAmazonConnect";
+import { getAmazonConnectErrorMessage } from "@/lib/marketplace-errors";
 import { cn } from '@/lib/utils';
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
@@ -114,6 +116,15 @@ const initialMarketplaces: Marketplace[] = [
 
 export function ConnectMarketplacePage() {
   const navigate = useNavigate();
+  const { workspace } = useViewerBootstrap();
+  const existingAmazonConnection = workspace?.marketplaceConnections?.find(
+    (c) => c.provider === "AMAZON",
+  );
+  const amazonConnect = useAmazonConnect(
+    workspace?.id,
+    existingAmazonConnection,
+  );
+
   const [marketplaces, setMarketplaces] =
     useState<Marketplace[]>(initialMarketplaces);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -122,8 +133,24 @@ export function ConnectMarketplacePage() {
   const [region, setRegion] = useState("");
   const [showSkipWarning, setShowSkipWarning] = useState(false);
 
-  const hasAnyConnected = marketplaces.some((m) => m.status === "connected");
-  const selectedMp = marketplaces.find((m) => m.id === selectedId);
+  // Sync Amazon card status from the hook
+  const amazonStatus: ConnectionStatus =
+    amazonConnect.status === "success"
+      ? "connected"
+      : amazonConnect.status === "pending"
+        ? "connecting"
+        : amazonConnect.status === "error"
+          ? "error"
+          : "idle";
+
+  const marketplacesWithAmazon = marketplaces.map((m) =>
+    m.id === "amazon" ? { ...m, status: amazonStatus } : m,
+  );
+
+  const hasAnyConnected = marketplacesWithAmazon.some(
+    (m) => m.status === "connected",
+  );
+  const selectedMp = marketplacesWithAmazon.find((m) => m.id === selectedId);
 
   const updateStatus = (id: string, status: ConnectionStatus) => {
     setMarketplaces((prev) =>
@@ -170,6 +197,15 @@ export function ConnectMarketplacePage() {
 
   const handleCardClick = (mp: Marketplace) => {
     if (mp.disabled) return;
+
+    // Amazon uses OAuth popup — never expand the generic panel
+    if (mp.id === "amazon") {
+      if (amazonConnect.status === "success") return; // already connected
+      if (amazonConnect.status === "pending") return; // popup in flight
+      amazonConnect.connect();
+      return;
+    }
+
     if (mp.status === "connected") return;
     if (mp.status === "error") {
       handleRetry(mp.id);
@@ -201,7 +237,12 @@ export function ConnectMarketplacePage() {
       wide
       footer={
         <>
-          <Button variant="outline" data-testid="back-btn" className="rounded-lg" asChild>
+          <Button
+            variant="outline"
+            data-testid="back-btn"
+            className="rounded-lg"
+            asChild
+          >
             <Link to="/onboarding/choose-plan">
               <ArrowLeft className="size-4 mr-2" />
               Back
@@ -224,7 +265,10 @@ export function ConnectMarketplacePage() {
           <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
             <ShoppingBag className="size-7 text-primary" />
           </div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground" data-testid="connect-marketplace-title">
+          <h1
+            className="font-heading text-3xl font-bold tracking-tight text-foreground"
+            data-testid="connect-marketplace-title"
+          >
             Connect your marketplaces
           </h1>
           <p className="text-base text-muted-foreground mt-2 max-w-lg mx-auto">
@@ -276,9 +320,22 @@ export function ConnectMarketplacePage() {
           </div>
         )}
 
+        {/* Amazon OAuth error */}
+        {amazonConnect.status === "error" && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <AlertTriangle className="size-5 text-red-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-800">
+              {getAmazonConnectErrorMessage(amazonConnect.errorCode)}
+            </p>
+          </div>
+        )}
+
         {/* Marketplace Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 max-w-3xl mx-auto" data-testid="marketplace-grid">
-          {marketplaces.map((mp) => (
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 max-w-3xl mx-auto"
+          data-testid="marketplace-grid"
+        >
+          {marketplacesWithAmazon.map((mp) => (
             <button
               key={mp.id}
               data-testid={`marketplace-card-${mp.id}`}
@@ -299,24 +356,79 @@ export function ConnectMarketplacePage() {
                   "border-primary bg-primary/5 shadow-sm",
               )}
             >
-              {/* Status badge */}
-              {mp.status === "connected" && (
-                <div className="absolute top-2 right-2">
-                  <CheckCircle2 className="size-5 text-emerald-500" />
+              {mp.status === "connecting" ? (
+                /* Connecting: logo on top, spinner badge at bottom */
+                <div className="flex flex-col items-center gap-2">
+                  {mp.icon ? (
+                    <img
+                      src={mp.icon}
+                      alt={mp.name}
+                      className="h-7 w-auto object-contain"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        "font-heading text-base font-bold",
+                        mp.color,
+                      )}
+                    >
+                      {mp.name}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    <Loader2 className="size-3 animate-spin" />
+                    Connecting
+                  </span>
                 </div>
-              )}
-              {mp.status === "connecting" && (
-                <div className="absolute top-2 right-2">
-                  <Loader2 className="size-5 text-primary animate-spin" />
+              ) : mp.status === "connected" ? (
+                /* Connected: badge on top, logo below */
+                <div className="flex flex-col items-center gap-2">
+                  <span className="tracking-wide absolute top-0.5 right-0.5">
+                    <CheckCircle2 className="size-5 text-emerald-500" />
+                  </span>
+                  {mp.icon ? (
+                    <img
+                      src={mp.icon}
+                      alt={mp.name}
+                      className="h-7 w-auto object-contain"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        "font-heading text-base font-bold",
+                        mp.color,
+                      )}
+                    >
+                      {mp.name}
+                    </span>
+                  )}
                 </div>
-              )}
-              {mp.status === "error" && (
-                <div className="absolute top-2 right-2">
-                  <AlertTriangle className="size-5 text-red-500" />
+              ) : mp.status === "error" ? (
+                /* Error: warning icon + logo + retry hint */
+                <div className="flex flex-col items-center gap-1.5">
+                  <AlertTriangle className="size-4 text-red-500" />
+                  {mp.icon ? (
+                    <img
+                      src={mp.icon}
+                      alt={mp.name}
+                      className="h-6 w-auto object-contain opacity-60"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        "font-heading text-sm font-bold opacity-60",
+                        mp.color,
+                      )}
+                    >
+                      {mp.name}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-medium text-red-600">
+                    Retry
+                  </span>
                 </div>
-              )}
-
-              {mp.icon ? (
+              ) : /* Idle: just the logo */
+              mp.icon ? (
                 <img
                   src={mp.icon}
                   alt={mp.name}
@@ -329,148 +441,144 @@ export function ConnectMarketplacePage() {
                   {mp.name}
                 </span>
               )}
-
-              {mp.status === "connected" && (
-                <Badge variant="success" className="text-xs">
-                  Connected
-                </Badge>
-              )}
-              {mp.status === "error" && (
-                <span className="text-xs text-red-600 font-medium">Retry</span>
-              )}
             </button>
           ))}
         </div>
 
-        {/* Connection Panel */}
-        {selectedId && selectedMp && selectedMp.status !== "connected" && (
-          <div
-            data-testid="connection-panel"
-            className="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 mb-6 animate-fade-up max-w-2xl mx-auto"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-heading text-base font-semibold flex items-center gap-2">
-                Connect to {selectedMp.name}
-              </h3>
-              <button
-                data-testid="close-connection-panel"
-                onClick={() => setSelectedId(null)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">Auth Token / API Key</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="Paste your API key here"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  data-testid="api-key-input"
-                  className="h-10"
-                />
-                <a
-                  href="#"
-                  data-testid="token-help-link"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  onClick={(e) => e.preventDefault()}
+        {/* Connection Panel — never shown for Amazon (uses OAuth popup) */}
+        {selectedId &&
+          selectedId !== "amazon" &&
+          selectedMp &&
+          selectedMp.status !== "connected" && (
+            <div
+              data-testid="connection-panel"
+              className="bg-white border border-border rounded-2xl shadow-sm p-6 sm:p-8 mb-6 animate-fade-up max-w-2xl mx-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-heading text-base font-semibold flex items-center gap-2">
+                  Connect to {selectedMp.name}
+                </h3>
+                <button
+                  data-testid="close-connection-panel"
+                  onClick={() => setSelectedId(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  How do I generate this token?
-                  <ExternalLink className="size-3" />
-                </a>
+                  <X className="size-4" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="seller-id">Seller ID (optional)</Label>
+                  <Label htmlFor="api-key">Auth Token / API Key</Label>
                   <Input
-                    id="seller-id"
-                    placeholder="e.g. A1B2C3D4"
-                    value={sellerId}
-                    onChange={(e) => setSellerId(e.target.value)}
-                    data-testid="seller-id-input"
+                    id="api-key"
+                    type="password"
+                    placeholder="Paste your API key here"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    data-testid="api-key-input"
                     className="h-10"
                   />
+                  <a
+                    href="#"
+                    data-testid="token-help-link"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    How do I generate this token?
+                    <ExternalLink className="size-3" />
+                  </a>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="region">Region (optional)</Label>
-                  <Input
-                    id="region"
-                    placeholder="e.g. IN, US"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    data-testid="region-input"
-                    className="h-10"
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="seller-id">Seller ID (optional)</Label>
+                    <Input
+                      id="seller-id"
+                      placeholder="e.g. A1B2C3D4"
+                      value={sellerId}
+                      onChange={(e) => setSellerId(e.target.value)}
+                      data-testid="seller-id-input"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region (optional)</Label>
+                    <Input
+                      id="region"
+                      placeholder="e.g. IN, US"
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      data-testid="region-input"
+                      className="h-10"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Error state */}
-              {selectedMp.status === "error" && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  <AlertTriangle className="size-4 shrink-0" />
-                  Connection failed. Please check your credentials and try
-                  again.
+                {/* Error state */}
+                {selectedMp.status === "error" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    Connection failed. Please check your credentials and try
+                    again.
+                  </div>
+                )}
+
+                {/* Security note */}
+                <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  <Lock className="size-3.5 shrink-0" />
+                  Your credentials are encrypted and secure.
                 </div>
-              )}
 
-              {/* Security note */}
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                <Lock className="size-3.5 shrink-0" />
-                Your credentials are encrypted and secure.
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  data-testid="test-connection-btn"
-                  onClick={handleTestConnection}
-                  disabled={!apiKey || selectedMp.status === "connecting"}
-                  className="rounded-lg"
-                >
-                  {selectedMp.status === "connecting" ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Testing...
-                    </>
-                  ) : (
-                    "Test connection"
-                  )}
-                </Button>
-                <Button
-                  data-testid="connect-btn"
-                  onClick={handleConnect}
-                  disabled={!apiKey || selectedMp.status === "connecting"}
-                  className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  {selectedMp.status === "connecting" ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    "Connect"
-                  )}
-                </Button>
+                {/* Actions */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    data-testid="test-connection-btn"
+                    onClick={handleTestConnection}
+                    disabled={!apiKey || selectedMp.status === "connecting"}
+                    className="rounded-lg"
+                  >
+                    {selectedMp.status === "connecting" ? (
+                      <>
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      "Test connection"
+                    )}
+                  </Button>
+                  <Button
+                    data-testid="connect-btn"
+                    onClick={handleConnect}
+                    disabled={!apiKey || selectedMp.status === "connecting"}
+                    className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    {selectedMp.status === "connecting" ? (
+                      <>
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      "Connect"
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Connected summary */}
         {hasAnyConnected && (
-          <div className="flex items-center gap-2 mb-6 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 max-w-2xl mx-auto" data-testid="connected-summary">
+          <div
+            className="flex items-center gap-2 mb-6 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 max-w-2xl mx-auto"
+            data-testid="connected-summary"
+          >
             <CheckCircle2 className="size-4 shrink-0" />
-            {marketplaces.filter((m) => m.status === "connected").length}{" "}
+            {marketplacesWithAmazon.filter((m) => m.status === "connected").length}{" "}
             marketplace(s) connected successfully.
           </div>
         )}
-
       </div>
     </OnboardingLayout>
   );
