@@ -23,6 +23,8 @@ import {
   User,
   CalendarClock,
   Eye,
+  Scissors,
+  CircleAlert,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -592,7 +594,7 @@ export function OrdersPage() {
           <ReadyToShipView onViewPackages={(idx) => setViewPackagesGroup(idx)} />
         )
       ) : (
-        <Card className="overflow-hidden" data-testid="orders-table">
+        <Card className="overflow-hidden overflow-x-auto" data-testid="orders-table">
           {isInTransit ? (
             <InTransitTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
           ) : isCompleted ? (
@@ -740,7 +742,7 @@ function FilterSelect({ testId, label, value, onChange, options }: {
 // ─── Table Headers ────────────────────────────────────────────────
 function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border min-w-[1060px]">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -757,7 +759,7 @@ function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; 
 
 function PackedTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border min-w-[1020px]">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -797,7 +799,7 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
+        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors min-w-[1060px]",
         checked && "bg-primary/5"
       )}
     >
@@ -889,7 +891,7 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
 // ─── In-Transit Table ─────────────────────────────────────────────
 function InTransitTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border min-w-[1030px]">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -908,7 +910,7 @@ function InTransitOrderRow({ order, checked, onToggle, onOpenDrawer }: {
   order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
 }) {
   return (
-    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors min-w-[1030px]", checked && "bg-primary/5")}>
       <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
       <div className="text-xs overflow-hidden">
         <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
@@ -933,7 +935,7 @@ function InTransitOrderRow({ order, checked, onToggle, onOpenDrawer }: {
 // ─── Completed Table ──────────────────────────────────────────────
 function CompletedTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border min-w-[1030px]">
       <div className="flex items-center justify-center"><Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" /></div>
       <span>Order details</span>
       <span>Product details</span>
@@ -950,7 +952,7 @@ function CompletedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
   order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
 }) {
   return (
-    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors min-w-[1030px]", checked && "bg-primary/5")}>
       <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
       <div className="text-xs overflow-hidden">
         <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
@@ -975,7 +977,7 @@ function CompletedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
 // ─── Cancelled Table ──────────────────────────────────────────────
 function CancelledTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border min-w-[1030px]">
       <div className="flex items-center justify-center"><Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" /></div>
       <span>Order details</span>
       <span>Product details</span>
@@ -992,7 +994,7 @@ function CancelledOrderRow({ order, checked, onToggle, onOpenDrawer }: {
   order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
 }) {
   return (
-    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors min-w-[1030px]", checked && "bg-primary/5")}>
       <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
       <div className="text-xs overflow-hidden">
         <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
@@ -1023,7 +1025,7 @@ function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
+        "grid grid-cols-1 lg:grid-cols-[40px_100px_280px_160px_150px_150px_100px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors min-w-[1020px]",
         checked && "bg-primary/5"
       )}
     >
@@ -1188,28 +1190,26 @@ function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAss
         ) : (
           /* Pending / New */
           <>
-            {!isCoupang && (
-              <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
-                <Download className="size-3.5" />
-                Export
-              </Button>
-            )}
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
+              <Download className="size-3.5" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 opacity-50 cursor-not-allowed" disabled data-testid="action-split">
+              <Scissors className="size-3.5" />
+              Split orders
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-mark-oos">
+              <CircleAlert className="size-3.5" />
+              Mark OOS
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel" onClick={onCancelOrder}>
               <X className="size-3.5" />
               Cancel order
             </Button>
-            {!isCoupang && (
-              <>
-                <Button size="sm" className="gap-1.5" data-testid="action-schedule-pickup" onClick={onSchedulePickup}>
-                  <CalendarClock className="size-3.5" />
-                  Schedule pickup
-                </Button>
-                <Button size="sm" className="gap-1.5" data-testid="action-assign-courier" onClick={onAssignCourier}>
-                  <Truck className="size-3.5" />
-                  Assign courier
-                </Button>
-              </>
-            )}
+            <Button size="sm" className="gap-1.5" data-testid="action-confirm">
+              <Check className="size-3.5" />
+              Confirm order
+            </Button>
           </>
         )}
       </div>

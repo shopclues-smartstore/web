@@ -25,28 +25,22 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 
 ### Orders Section (Fully Built)
 - [x] **Channel Selector**: "All channels" unified view + individual marketplace views
-- [x] **Dynamic Status Counts**: Computed from actual data (84 total, 12 per status, 14 per marketplace)
-- [x] **Customer details masking**: Phone/address masked for Pending, Accepted, Packed tabs
-- [x] **Status column**: Shows actual order status badge (Pending, Accepted, etc.)
-- [x] **Filters**: Shipping method (no duplicate), Date filter with specific date picker, SKU filter with actual data, Payment type
-- [x] **Status-specific table layouts**:
-  - Pending/Accepted: Order date, Order details, Product details, Customer details, Delivery details, Payment, Status
-  - Packed: Order date, Product details, Customer details, Handover date, AWB number, Label status
-  - In-transit: Order details, Product details, Shipping method, Shipped on, Payment, AWB no., Status
-  - Completed: Order details, Product details, Shipping method, Delivered on, Payment, AWB no., Status
-  - Cancelled: Order details, Product details, Shipping method, Cancelled on, Payment, Reason, Status
+- [x] **Dynamic Status Counts**: Computed from actual data (synced with tables)
+- [x] **Customer details masking**: Phone/address masked for Pending, Accepted, Packed
+- [x] **Status column**: Shows actual order status badge
+- [x] **Horizontal scroll**: All tables support horizontal scroll with min-width
+- [x] **Filters**: Shipping (no duplicate), Date (with specific date picker), SKU (actual data), Payment
+- [x] **Status-specific table layouts**: Pending/Accepted, Packed, In-transit, Completed, Cancelled
 - [x] **Status-specific footers**:
-  - Pending/Accepted: Export, Cancel order, Schedule pickup, Assign courier (no Import)
+  - Pending: Export, Split orders (disabled), Mark OOS, Cancel order, Confirm order
+  - Accepted: Export, Cancel order, Schedule pickup, Assign courier
   - Packed: Print labels, Create manifest
   - In-transit: Export, Print invoice, Mark as delivered
   - Completed: Export, Print invoice
   - Cancelled: Export, Print credit note
   - Ready to Ship: No footer (card view)
-- [x] **Ready to Ship**: Card layout with fulfillment groups + "View packages" sub-view (back button, summary card, packages table, Re-print labels footer)
-- [x] **Schedule Pickup modal**: Package details, pickup slot, shipping fee
-- [x] **Assign Courier modal**: Date calendar picker, courier dropdown, courier service dropdown
-- [x] **Print Invoice & Shipping Label modal**: Selected orders list, Print labels CTA
-- [x] **Cancel Order modal**: Product info, 5 radio reasons, textarea for "Other", Cancel order CTA
+- [x] **Ready to Ship**: Card layout + "View packages" sub-view
+- [x] **Schedule Pickup modal**, **Assign Courier modal** (with date picker), **Print Invoice modal**, **Cancel Order modal** (with 5 reasons + Other)
 - [x] **Order Detail Drawer**: Timeline, customer, shipping, payment info
 
 ## Prioritized Backlog
@@ -69,7 +63,7 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - Help section
 
 ## Key Files
-- `/app/src/pages/OrdersPage.tsx` - Complete Orders module (~1970 lines)
+- `/app/src/pages/OrdersPage.tsx` - Complete Orders module (~1980 lines)
 - `/app/src/components/ui/marketplace-logos.tsx` - Marketplace SVG logos
 - `/app/src/pages/ProductsPage.tsx` - Products page
 - `/app/src/main.tsx` - App routing
