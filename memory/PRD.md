@@ -31,27 +31,19 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] Fixed-width columns, text truncation, inline editing for Inventory & Price
 
 ### Orders Section (Feb 2026)
-- [x] **Unified Orders Dashboard** (Revamped Mar 2026) - consolidated view across all marketplaces
-  - Unified table showing all 87 orders from 6 marketplaces (Amazon, Flipkart, Coupang, Snapdeal, Meesho, Myntra)
-  - Quick filter tabs: All Orders, Pending Fulfillment, Shipped, Cancelled, Returns (with counts)
-  - Filter dropdowns: Marketplace, Order Status, Fulfillment Status, Date Range
-  - Search by Order ID, customer name, SKU, or product title
-  - Marketplace icon + label per row (Source column)
-  - Status badges with color coding: Pending (amber), Confirmed (blue), Packed (violet), Shipped (sky), Delivered (emerald), Cancelled (red), Returned (orange)
-  - Fulfillment badges: Unfulfilled, Fulfilled, Partial
-  - Bulk actions bar: Mark Fulfilled, Print Labels, Export (appears on selection)
-  - Select all checkbox per page, individual row checkboxes
-  - Pagination with page numbers (10 items per page)
-  - Clear filters button when any filter is active
-  - Order Detail Drawer (slide-in panel) with:
-    - Order ID with copy button + Marketplace logo & name
-    - Product details (title, qty, SKU)
-    - 5-step Order Timeline (Placed → Confirmed → Packed → Shipped → Delivered)
-    - Customer info (name, phone, address)
-    - Shipping & Delivery (method, dates, AWB, carrier, SLA alerts)
-    - Payment info with contextual status
-    - Footer: Print Invoice + Process Order buttons
-    - Close via X, backdrop click, or Escape key
+- [x] Marketplace Channel Selector with "All channels" unified view (added Mar 2026)
+  - "All channels" default option shows combined orders from all 6 marketplaces
+  - Combined status bar with aggregate counts
+  - Each order row shows its marketplace badge for identification
+  - Seamless switch between "All" and individual marketplace views
+- [x] Dynamic Status Bar per marketplace (Coupang: "New"; others: "Pending")
+- [x] Conditional Filters (Coupang fewer filters)
+- [x] Quick Filter Pills
+- [x] Dynamic Orders Table (columns change for Packed status)
+- [x] SLA Indicators (breached/warning)
+- [x] Conditional Action Bar per marketplace and status
+- [x] Marketplace-specific Modals (Schedule Pickup, Process Labels)
+- [x] Order Detail Drawer with timeline, customer, shipping, payment info
 - [x] Revamped Marketplace Logos - improved SVGs for all 7 marketplaces
 
 ## Prioritized Backlog
@@ -77,7 +69,7 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - Help section
 
 ## Key Files
-- `/app/src/pages/OrdersPage.tsx` - Unified Orders Dashboard with drawer
+- `/app/src/pages/OrdersPage.tsx` - Orders page with "All channels" support and drawer
 - `/app/src/components/ui/marketplace-logos.tsx` - All marketplace SVG logos
 - `/app/src/pages/ProductsPage.tsx` - Products page
 - `/app/src/main.tsx` - App routing
