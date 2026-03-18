@@ -62,94 +62,38 @@ interface OrderItem {
   slaText?: string
   payment: "Prepaid" | "COD"
   amount: string
+  sellingPrice: string
   status: OrderStatusKey
   marketplace: MarketplaceId
-  // Packed-specific fields
+  // Packed/RTS-specific
   handoverDate?: string
   handoverCountdown?: string
   awbNumber?: string
   awbCarrier?: string
   labelStatus?: "printed" | "pending"
+  // In-transit/Completed/Cancelled
+  shippedOn?: string
+  deliveredOn?: string
+  cancelledOn?: string
+  cancelReason?: string
 }
 
 // ─── Marketplace Config ───────────────────────────────────────────
-const marketplaceChannels: MarketplaceChannel[] = [
-  { id: "amazon", orderCount: 100 },
-  { id: "flipkart", orderCount: 100 },
-  { id: "snapdeal", orderCount: 100 },
-  { id: "meesho", orderCount: 100 },
-  { id: "coupang", orderCount: 100 },
-  { id: "myntra", orderCount: 100 },
-]
+const marketplaces: MarketplaceId[] = ["amazon", "flipkart", "coupang", "snapdeal", "meesho", "myntra"]
 
-const allChannelOrderCount = marketplaceChannels.reduce((sum, ch) => sum + ch.orderCount, 0)
-
-// Combined status bar for "All" channel
-const allStatusBarConfig: { key: OrderStatusKey; label: string; count: number }[] = [
-  { key: "pending", label: "Pending", count: 600 },
-  { key: "accepted", label: "Accepted", count: 480 },
-  { key: "packed", label: "Packed", count: 480 },
-  { key: "ready_to_ship", label: "Ready to ship", count: 240 },
-  { key: "in_transit", label: "In-transit", count: 120 },
-  { key: "completed", label: "Completed", count: 120 },
-  { key: "cancelled", label: "Cancelled", count: 120 },
-]
-
-const statusBarConfig: Record<MarketplaceId, { key: OrderStatusKey; label: string; count: number }[]> = {
-  amazon: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  flipkart: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  coupang: [
-    { key: "new", label: "New", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  snapdeal: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  meesho: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
-  myntra: [
-    { key: "pending", label: "Pending", count: 100 },
-    { key: "accepted", label: "Accepted", count: 80 },
-    { key: "packed", label: "Packed", count: 80 },
-    { key: "ready_to_ship", label: "Ready to ship", count: 40 },
-    { key: "in_transit", label: "In-transit", count: 20 },
-    { key: "completed", label: "Completed", count: 20 },
-    { key: "cancelled", label: "Cancelled", count: 20 },
-  ],
+// Dynamic counts from actual data
+function computeStatusCounts(orders: OrderItem[]): { key: OrderStatusKey; label: string; count: number }[] {
+  const countMap: Record<string, number> = {}
+  for (const o of orders) countMap[o.status] = (countMap[o.status] || 0) + 1
+  return [
+    { key: "pending" as OrderStatusKey, label: "Pending", count: (countMap["pending"] || 0) + (countMap["new"] || 0) },
+    { key: "accepted" as OrderStatusKey, label: "Accepted", count: countMap["accepted"] || 0 },
+    { key: "packed" as OrderStatusKey, label: "Packed", count: countMap["packed"] || 0 },
+    { key: "ready_to_ship" as OrderStatusKey, label: "Ready to ship", count: countMap["ready_to_ship"] || 0 },
+    { key: "in_transit" as OrderStatusKey, label: "In-transit", count: countMap["in_transit"] || 0 },
+    { key: "completed" as OrderStatusKey, label: "Completed", count: countMap["completed"] || 0 },
+    { key: "cancelled" as OrderStatusKey, label: "Cancelled", count: countMap["cancelled"] || 0 },
+  ]
 }
 
 // Quick filter configs
@@ -182,25 +126,30 @@ function generateMockOrders(): OrderItem[] {
     { sla: "warning", text: "SLA breaching in 2 hrs" },
     { sla: "breached", text: "SLA breached" },
   ]
-  const statuses: OrderStatusKey[] = ["pending", "accepted", "packed", "ready_to_ship", "in_transit"]
+  const allStatuses: OrderStatusKey[] = ["pending", "accepted", "packed", "ready_to_ship", "in_transit", "completed", "cancelled"]
   const marketplaces: MarketplaceId[] = ["amazon", "flipkart", "coupang", "snapdeal", "meesho", "myntra"]
+  const cancelReasons = ["Product not available", "Customer requested cancellation", "Product damaged", "Product missing"]
 
   const orders: OrderItem[] = []
   let idx = 0
   for (const mp of marketplaces) {
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 14; i++) {
       const nameIdx = (idx + i) % names.length
       const addrIdx = (idx + i) % addresses.length
       const prodIdx = (idx + i) % products.length
       const slaIdx = i % slaStates.length
-      const statusIdx = i % statuses.length
-      let status = statuses[statusIdx]
-      // For coupang, replace "pending" with "new"
+      const statusIdx = i % allStatuses.length
+      let status = allStatuses[statusIdx]
       if (mp === "coupang" && status === "pending") status = "new"
       const isPacked = status === "packed"
+      const isRTS = status === "ready_to_ship"
+      const isInTransit = status === "in_transit"
+      const isCompleted = status === "completed"
+      const isCancelled = status === "cancelled"
+      const price = mp === "coupang" ? "₩24,000" : "₹1,200"
       orders.push({
         id: `ord-${mp}-${i}`,
-        orderId: `7588599904${6732 + i}`,
+        orderId: `7588599904${6712 + i}`,
         orderDate: "24 Nov, 2025\n10:14 AM",
         timeAgo: "2 hours ago",
         fulfillment: "Fulfilment method : Seller",
@@ -217,15 +166,19 @@ function generateMockOrders(): OrderItem[] {
         sla: slaStates[slaIdx].sla,
         slaText: slaStates[slaIdx].text,
         payment: i % 3 === 0 ? "COD" : "Prepaid",
-        amount: mp === "coupang" ? "₩24,000" : (mp === "amazon" ? "₹1,200" : "₹1,200"),
+        amount: price,
+        sellingPrice: price,
         status,
         marketplace: mp,
-        // Packed-specific
-        handoverDate: isPacked ? "11:59 PM, 2 Dec 2025" : undefined,
-        handoverCountdown: isPacked ? "13 hours to go" : undefined,
-        awbNumber: isPacked ? `7487584489${5889 + i}` : undefined,
-        awbCarrier: isPacked ? "Delhivery" : undefined,
+        handoverDate: (isPacked || isRTS) ? "11:59 PM, 2 Dec 2025" : undefined,
+        handoverCountdown: (isPacked || isRTS) ? "13 hours to go" : undefined,
+        awbNumber: (isPacked || isRTS || isInTransit || isCompleted) ? `7487584489${5889 + i}` : undefined,
+        awbCarrier: (isPacked || isRTS || isInTransit || isCompleted) ? "Delhivery" : undefined,
         labelStatus: isPacked ? (i % 2 === 0 ? "printed" : "pending") : undefined,
+        shippedOn: (isInTransit || isCompleted) ? "24 Nov, 2025" : undefined,
+        deliveredOn: isCompleted ? "24 Nov, 2025" : undefined,
+        cancelledOn: isCancelled ? "24 Nov, 2025" : undefined,
+        cancelReason: isCancelled ? cancelReasons[i % cancelReasons.length] : undefined,
       })
     }
     idx += 3
@@ -234,6 +187,13 @@ function generateMockOrders(): OrderItem[] {
 }
 
 const allMockOrders = generateMockOrders()
+
+// Channel counts derived from actual data
+const marketplaceChannels: MarketplaceChannel[] = marketplaces.map(mp => ({
+  id: mp,
+  orderCount: allMockOrders.filter(o => o.marketplace === mp).length,
+}))
+const allChannelOrderCount = allMockOrders.length
 
 // ─── Masking Helpers ──────────────────────────────────────────────
 function maskPhone(phone: string): string {
@@ -284,6 +244,10 @@ export function OrdersPage() {
   const [modalOrder, setModalOrder] = useState<OrderItem | null>(null)
   const [showAssignCourier, setShowAssignCourier] = useState(false)
   const [showPrintInvoice, setShowPrintInvoice] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+
+  // View packages state for Ready to Ship
+  const [viewPackagesGroup, setViewPackagesGroup] = useState<number | null>(null)
 
   // Drawer state
   const [drawerOrder, setDrawerOrder] = useState<OrderItem | null>(null)
@@ -293,9 +257,10 @@ export function OrdersPage() {
 
   // Reset status when channel changes
   useEffect(() => {
-    const statuses = selectedChannel === "all" ? allStatusBarConfig : statusBarConfig[selectedChannel]
-    if (statuses.length > 0) {
-      setSelectedStatus(statuses[0].key)
+    const orders = selectedChannel === "all" ? allMockOrders : allMockOrders.filter(o => o.marketplace === selectedChannel)
+    const statusList = computeStatusCounts(orders)
+    if (statusList.length > 0) {
+      setSelectedStatus(statusList[0].key)
     }
     setSelectedOrders(new Set())
     setActiveQuickFilter(null)
@@ -311,9 +276,27 @@ export function OrdersPage() {
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
 
-  const statuses = selectedChannel === "all" ? allStatusBarConfig : statusBarConfig[selectedChannel]
+  // Orders for current channel
+  const channelOrders = useMemo(() => {
+    if (selectedChannel === "all") return allMockOrders
+    return allMockOrders.filter(o => o.marketplace === selectedChannel)
+  }, [selectedChannel])
+
+  const statuses = useMemo(() => {
+    const counts = computeStatusCounts(channelOrders)
+    // For coupang, rename "Pending" to "New"
+    if (selectedChannel === "coupang") {
+      const pending = counts.find(s => s.key === "pending")
+      if (pending) pending.label = "New"
+    }
+    return counts
+  }, [channelOrders, selectedChannel])
+
   const isPacked = selectedStatus === "packed"
   const isReadyToShip = selectedStatus === "ready_to_ship"
+  const isInTransit = selectedStatus === "in_transit"
+  const isCompleted = selectedStatus === "completed"
+  const isCancelled = selectedStatus === "cancelled"
 
   // Filter orders
   const filteredOrders = useMemo(() => {
@@ -595,10 +578,32 @@ export function OrdersPage() {
 
       {/* Orders Table / Ready to Ship Cards */}
       {isReadyToShip ? (
-        <ReadyToShipView />
+        viewPackagesGroup !== null ? (
+          <ViewPackagesView
+            groupIndex={viewPackagesGroup}
+            orders={filteredOrders}
+            onBack={() => setViewPackagesGroup(null)}
+            selectedOrders={selectedOrders}
+            onToggle={toggleOrderSelect}
+            onToggleAll={toggleAllOrders}
+            onOpenDrawer={(o) => setDrawerOrder(o)}
+          />
+        ) : (
+          <ReadyToShipView onViewPackages={(idx) => setViewPackagesGroup(idx)} />
+        )
       ) : (
         <Card className="overflow-hidden" data-testid="orders-table">
-          {isPacked ? <PackedTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} /> : <PendingTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />}
+          {isInTransit ? (
+            <InTransitTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
+          ) : isCompleted ? (
+            <CompletedTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
+          ) : isCancelled ? (
+            <CancelledTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
+          ) : isPacked ? (
+            <PackedTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
+          ) : (
+            <PendingTableHeader allChecked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0} onToggleAll={toggleAllOrders} />
+          )}
 
           <div className="divide-y divide-border">
             {filteredOrders.length === 0 ? (
@@ -609,23 +614,16 @@ export function OrdersPage() {
               </div>
             ) : (
               filteredOrders.map((order) =>
-                isPacked ? (
-                  <PackedOrderRow
-                    key={order.id}
-                    order={order}
-                    checked={selectedOrders.has(order.id)}
-                    onToggle={() => toggleOrderSelect(order.id)}
-                    onOpenDrawer={() => setDrawerOrder(order)}
-                  />
+                isInTransit ? (
+                  <InTransitOrderRow key={order.id} order={order} checked={selectedOrders.has(order.id)} onToggle={() => toggleOrderSelect(order.id)} onOpenDrawer={() => setDrawerOrder(order)} />
+                ) : isCompleted ? (
+                  <CompletedOrderRow key={order.id} order={order} checked={selectedOrders.has(order.id)} onToggle={() => toggleOrderSelect(order.id)} onOpenDrawer={() => setDrawerOrder(order)} />
+                ) : isCancelled ? (
+                  <CancelledOrderRow key={order.id} order={order} checked={selectedOrders.has(order.id)} onToggle={() => toggleOrderSelect(order.id)} onOpenDrawer={() => setDrawerOrder(order)} />
+                ) : isPacked ? (
+                  <PackedOrderRow key={order.id} order={order} checked={selectedOrders.has(order.id)} onToggle={() => toggleOrderSelect(order.id)} onOpenDrawer={() => setDrawerOrder(order)} />
                 ) : (
-                  <PendingOrderRow
-                    key={order.id}
-                    order={order}
-                    checked={selectedOrders.has(order.id)}
-                    onToggle={() => toggleOrderSelect(order.id)}
-                    onAction={() => openModal(order)}
-                    onOpenDrawer={() => setDrawerOrder(order)}
-                  />
+                  <PendingOrderRow key={order.id} order={order} checked={selectedOrders.has(order.id)} onToggle={() => toggleOrderSelect(order.id)} onAction={() => openModal(order)} onOpenDrawer={() => setDrawerOrder(order)} />
                 )
               )
             )}
@@ -633,8 +631,8 @@ export function OrdersPage() {
         </Card>
       )}
 
-      {/* Bottom Action Bar - hidden for ready_to_ship */}
-      {!isReadyToShip && (
+      {/* Bottom Action Bar */}
+      {!isReadyToShip && !(isReadyToShip && viewPackagesGroup !== null) && (
         <ActionBar
           selectedCount={selectedOrders.size}
           marketplace={selectedChannel}
@@ -646,6 +644,7 @@ export function OrdersPage() {
           }}
           onAssignCourier={() => setShowAssignCourier(true)}
           onPrintInvoice={() => setShowPrintInvoice(true)}
+          onCancelOrder={() => setShowCancelModal(true)}
         />
       )}
 
@@ -669,6 +668,11 @@ export function OrdersPage() {
           orders={filteredOrders.filter(o => selectedOrders.has(o.id))}
           onClose={() => setShowPrintInvoice(false)}
         />
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <CancelOrderModal onClose={() => setShowCancelModal(false)} />
       )}
 
       {/* Order Detail Drawer */}
@@ -736,7 +740,7 @@ function FilterSelect({ testId, label, value, onChange, options }: {
 // ─── Table Headers ────────────────────────────────────────────────
 function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   return (
-    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px_90px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+    <div className="hidden lg:grid grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
       <div className="flex items-center justify-center">
         <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
@@ -747,7 +751,6 @@ function PendingTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; 
       <span>Delivery details</span>
       <span>Payment</span>
       <span>Status</span>
-      <span>Order status</span>
     </div>
   )
 }
@@ -794,7 +797,7 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
     <div
       data-testid={`order-row-${order.id}`}
       className={cn(
-        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_80px_90px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
+        "grid grid-cols-1 lg:grid-cols-[40px_100px_150px_250px_160px_140px_90px_90px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors",
         checked && "bg-primary/5"
       )}
     >
@@ -877,18 +880,136 @@ function PendingOrderRow({ order, checked, onToggle, onAction, onOpenDrawer }: {
           {order.status === "new" ? "New" : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
         </span>
       </div>
+    </div>
+  )
+}
 
-      {/* Order Status */}
-      <div className="text-xs">
-        <span className={cn(
-          "inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border",
-          order.payment === "Prepaid"
-            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-            : "text-amber-700 bg-amber-50 border-amber-200"
-        )}>
-          {order.payment === "Prepaid" ? "Paid" : "COD"}
-        </span>
+// ─── In-Transit Table ─────────────────────────────────────────────
+
+// ─── In-Transit Table ─────────────────────────────────────────────
+function InTransitTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
+  return (
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+      <div className="flex items-center justify-center">
+        <Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" />
       </div>
+      <span>Order details</span>
+      <span>Product details</span>
+      <span>Shipping method</span>
+      <span>Shipped on</span>
+      <span>Payment</span>
+      <span>AWB no.</span>
+      <span>Status</span>
+    </div>
+  )
+}
+
+function InTransitOrderRow({ order, checked, onToggle, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
+}) {
+  return (
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+      <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
+      <div className="text-xs overflow-hidden">
+        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
+        <p className="text-muted-foreground mt-0.5">Ordered on: {order.shippedOn || order.orderDate.split("\n")[0]}</p>
+        <p className="text-muted-foreground">Qty: {order.quantity}</p>
+        <p className="text-muted-foreground truncate">SKU: {order.productSku}</p>
+        <p className="text-muted-foreground">Selling price: {order.sellingPrice}</p>
+      </div>
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0"><ImageIcon className="size-5 text-muted-foreground" /></div>
+        <div className="text-xs min-w-0"><a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a></div>
+      </div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.deliveryMethod}</p></div>
+      <div className="text-xs text-muted-foreground">{order.shippedOn || "—"}</div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.payment}</p><p className="font-semibold text-foreground tabular-nums">{order.amount}</p></div>
+      <div className="text-xs overflow-hidden"><a href="#" className="text-primary font-medium hover:underline tabular-nums truncate block">{order.awbNumber || "—"}</a></div>
+      <div><span className="inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border text-sky-700 bg-sky-50 border-sky-200">In-transit</span></div>
+    </div>
+  )
+}
+
+// ─── Completed Table ──────────────────────────────────────────────
+function CompletedTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
+  return (
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+      <div className="flex items-center justify-center"><Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" /></div>
+      <span>Order details</span>
+      <span>Product details</span>
+      <span>Shipping method</span>
+      <span>Delivered on</span>
+      <span>Payment</span>
+      <span>AWB no.</span>
+      <span>Status</span>
+    </div>
+  )
+}
+
+function CompletedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
+}) {
+  return (
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+      <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
+      <div className="text-xs overflow-hidden">
+        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
+        <p className="text-muted-foreground mt-0.5">Ordered on: {order.orderDate.split("\n")[0]}</p>
+        <p className="text-muted-foreground">Qty: {order.quantity}</p>
+        <p className="text-muted-foreground truncate">SKU: {order.productSku}</p>
+        <p className="text-muted-foreground">Selling price: {order.sellingPrice}</p>
+      </div>
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0"><ImageIcon className="size-5 text-muted-foreground" /></div>
+        <div className="text-xs min-w-0"><a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a></div>
+      </div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.deliveryMethod}</p></div>
+      <div className="text-xs text-muted-foreground">{order.deliveredOn || "—"}</div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.payment}</p><p className="font-semibold text-foreground tabular-nums">{order.amount}</p></div>
+      <div className="text-xs overflow-hidden"><a href="#" className="text-primary font-medium hover:underline tabular-nums truncate block">{order.awbNumber || "—"}</a></div>
+      <div><span className="inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border text-emerald-700 bg-emerald-50 border-emerald-200">Delivered</span></div>
+    </div>
+  )
+}
+
+// ─── Cancelled Table ──────────────────────────────────────────────
+function CancelledTableHeader({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
+  return (
+    <div className="hidden lg:grid grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+      <div className="flex items-center justify-center"><Checkbox checked={allChecked} onChange={onToggleAll} testId="select-all-checkbox" /></div>
+      <span>Order details</span>
+      <span>Product details</span>
+      <span>Shipping method</span>
+      <span>Cancelled on</span>
+      <span>Payment</span>
+      <span>Reason</span>
+      <span>Status</span>
+    </div>
+  )
+}
+
+function CancelledOrderRow({ order, checked, onToggle, onOpenDrawer }: {
+  order: OrderItem; checked: boolean; onToggle: () => void; onOpenDrawer: () => void
+}) {
+  return (
+    <div data-testid={`order-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_180px_260px_100px_100px_90px_140px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", checked && "bg-primary/5")}>
+      <div className="flex items-start justify-center pt-1"><Checkbox checked={checked} onChange={onToggle} testId={`order-check-${order.id}`} /></div>
+      <div className="text-xs overflow-hidden">
+        <button onClick={onOpenDrawer} className="text-primary font-medium hover:underline text-left truncate block w-full" data-testid={`order-link-${order.id}`}>{order.orderId}</button>
+        <p className="text-muted-foreground mt-0.5">Ordered on: {order.orderDate.split("\n")[0]}</p>
+        <p className="text-muted-foreground">Qty: {order.quantity}</p>
+        <p className="text-muted-foreground truncate">SKU: {order.productSku}</p>
+        <p className="text-muted-foreground">Selling price: {order.sellingPrice}</p>
+      </div>
+      <div className="flex items-start gap-3 min-w-0">
+        <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0"><ImageIcon className="size-5 text-muted-foreground" /></div>
+        <div className="text-xs min-w-0"><a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a></div>
+      </div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.deliveryMethod}</p></div>
+      <div className="text-xs text-muted-foreground">{order.cancelledOn || "—"}</div>
+      <div className="text-xs"><p className="font-medium text-foreground">{order.payment}</p><p className="font-semibold text-foreground tabular-nums">{order.amount}</p></div>
+      <div className="text-xs text-muted-foreground"><p className="truncate">{order.cancelReason || "Reason will come here"}</p></div>
+      <div><span className="inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border text-red-700 bg-red-50 border-red-200">Cancelled</span></div>
     </div>
   )
 }
@@ -969,14 +1090,19 @@ function PackedOrderRow({ order, checked, onToggle, onOpenDrawer }: {
 }
 
 // ─── Bottom Action Bar ────────────────────────────────────────────
-function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAssignCourier, onPrintInvoice }: {
+function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAssignCourier, onPrintInvoice, onCancelOrder }: {
   selectedCount: number; marketplace: ChannelFilter; status: OrderStatusKey
-  onSchedulePickup: () => void; onAssignCourier: () => void; onPrintInvoice: () => void
+  onSchedulePickup: () => void; onAssignCourier: () => void; onPrintInvoice: () => void; onCancelOrder: () => void
 }) {
   const isCoupang = marketplace === "coupang"
   const isPacked = status === "packed"
   const isAccepted = status === "accepted"
-  const isPending = status === "pending" || status === "new"
+  const isInTransit = status === "in_transit"
+  const isCompleted = status === "completed"
+  const isCancelled = status === "cancelled"
+  const isReadyToShip = status === "ready_to_ship"
+
+  if (isReadyToShip) return null
 
   return (
     <div
@@ -999,13 +1125,50 @@ function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAss
               Create manifest
             </Button>
           </>
+        ) : isInTransit ? (
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
+              <Download className="size-3.5" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-print-invoice" onClick={onPrintInvoice}>
+              <Printer className="size-3.5" />
+              Print invoice
+            </Button>
+            <Button size="sm" className="gap-1.5" data-testid="action-mark-delivered">
+              <CheckCircle2 className="size-3.5" />
+              Mark as delivered
+            </Button>
+          </>
+        ) : isCompleted ? (
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
+              <Download className="size-3.5" />
+              Export
+            </Button>
+            <Button size="sm" className="gap-1.5" data-testid="action-print-invoice" onClick={onPrintInvoice}>
+              <Printer className="size-3.5" />
+              Print invoice
+            </Button>
+          </>
+        ) : isCancelled ? (
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
+              <Download className="size-3.5" />
+              Export
+            </Button>
+            <Button size="sm" className="gap-1.5" data-testid="action-print-credit-note">
+              <FileText className="size-3.5" />
+              Print credit note
+            </Button>
+          </>
         ) : isAccepted ? (
           <>
             <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
               <Download className="size-3.5" />
               Export
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel">
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel" onClick={onCancelOrder}>
               <X className="size-3.5" />
               Cancel order
             </Button>
@@ -1023,6 +1186,7 @@ function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAss
             )}
           </>
         ) : (
+          /* Pending / New */
           <>
             {!isCoupang && (
               <Button variant="outline" size="sm" className="gap-1.5" data-testid="action-export">
@@ -1030,7 +1194,7 @@ function ActionBar({ selectedCount, marketplace, status, onSchedulePickup, onAss
                 Export
               </Button>
             )}
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel">
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" data-testid="action-cancel" onClick={onCancelOrder}>
               <X className="size-3.5" />
               Cancel order
             </Button>
@@ -1059,7 +1223,7 @@ const readyToShipGroups = [
   { method: "Easy ship", packages: 10, courier: "Delhivery" },
 ]
 
-function ReadyToShipView() {
+function ReadyToShipView({ onViewPackages }: { onViewPackages: (idx: number) => void }) {
   return (
     <div className="space-y-4" data-testid="ready-to-ship-view">
       {readyToShipGroups.map((group, i) => (
@@ -1084,7 +1248,7 @@ function ReadyToShipView() {
                 <CheckCircle2 className="size-3.5" />
                 Print & close manifest
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" data-testid={`rts-view-packages-${i}`}>
+              <Button variant="outline" size="sm" className="gap-1.5" data-testid={`rts-view-packages-${i}`} onClick={() => onViewPackages(i)}>
                 <Eye className="size-3.5" />
                 View packages
               </Button>
@@ -1096,9 +1260,203 @@ function ReadyToShipView() {
   )
 }
 
+// ─── View Packages Sub-view ───────────────────────────────────────
+function ViewPackagesView({ groupIndex, orders, onBack, selectedOrders, onToggle, onToggleAll, onOpenDrawer }: {
+  groupIndex: number; orders: OrderItem[]; onBack: () => void
+  selectedOrders: Set<string>; onToggle: (id: string) => void; onToggleAll: () => void
+  onOpenDrawer: (o: OrderItem) => void
+}) {
+  const group = readyToShipGroups[groupIndex]
+  const allChecked = orders.length > 0 && orders.every(o => selectedOrders.has(o.id))
+  const MpLogo = marketplaceLogos["amazon"]?.Logo
+
+  return (
+    <div className="space-y-4" data-testid="view-packages-view">
+      <button onClick={onBack} className="text-sm text-primary font-medium hover:underline flex items-center gap-1" data-testid="back-to-orders">
+        &larr; Back to orders
+      </button>
+
+      {/* Summary Card */}
+      <Card className="px-6 py-4" data-testid="packages-summary-card">
+        <div className="flex items-center gap-8">
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Channel</p>
+            <div className="mt-1">
+              {MpLogo && (
+                <span className={cn("inline-flex items-center rounded-md border px-2 py-1", marketplaceLogos["amazon"]?.bgColor)}>
+                  <MpLogo className="h-3" />
+                </span>
+              )}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Fulfillment method</p>
+            <p className="text-sm font-semibold text-foreground mt-1">{group.method}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">No. of packages</p>
+            <p className="text-sm font-semibold text-foreground mt-1 tabular-nums">{group.packages}</p>
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Courier partner</p>
+            <p className="text-sm font-semibold text-foreground mt-1">{group.courier}</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Packages Table */}
+      <Card className="overflow-hidden" data-testid="packages-table">
+        <div className="hidden lg:grid grid-cols-[40px_100px_260px_160px_150px_150px_80px] gap-4 px-4 py-3 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+          <div className="flex items-center justify-center"><Checkbox checked={allChecked} onChange={onToggleAll} testId="pkg-select-all" /></div>
+          <span>Order date</span>
+          <span>Product details</span>
+          <span>Customer details</span>
+          <span>Handover date</span>
+          <span>AWB number</span>
+          <span>Status</span>
+        </div>
+        <div className="divide-y divide-border">
+          {orders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Package className="size-10 mb-3 opacity-40" />
+              <p className="text-sm font-medium">No packages found</p>
+            </div>
+          ) : orders.map(order => (
+            <div key={order.id} data-testid={`pkg-row-${order.id}`} className={cn("grid grid-cols-1 lg:grid-cols-[40px_100px_260px_160px_150px_150px_80px] gap-2 lg:gap-4 px-4 py-4 items-start hover:bg-muted/20 transition-colors", selectedOrders.has(order.id) && "bg-primary/5")}>
+              <div className="flex items-start justify-center pt-1"><Checkbox checked={selectedOrders.has(order.id)} onChange={() => onToggle(order.id)} testId={`pkg-check-${order.id}`} /></div>
+              <div className="text-xs text-muted-foreground"><p className="font-medium text-foreground truncate">{order.timeAgo}</p><p className="whitespace-pre-line mt-0.5">{order.orderDate}</p></div>
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="size-12 rounded-lg bg-muted flex items-center justify-center shrink-0 cursor-pointer" onClick={() => onOpenDrawer(order)}><ImageIcon className="size-5 text-muted-foreground" /></div>
+                <div className="text-xs min-w-0">
+                  <a href="#" className="text-primary font-medium hover:underline truncate block">{order.productTitle}</a>
+                  <p className="text-muted-foreground mt-0.5">Qty: {order.quantity}</p>
+                  <p className="text-muted-foreground truncate">SKU: {order.productSku}</p>
+                </div>
+              </div>
+              <div className="text-xs overflow-hidden">
+                <p className="font-medium text-foreground truncate">{order.customerName}</p>
+                <p className="text-muted-foreground truncate">{maskPhone(order.customerPhone)}</p>
+                <p className="text-muted-foreground mt-0.5 truncate">{maskAddress(order.customerAddress)}</p>
+              </div>
+              <div className="text-xs"><p className="font-semibold text-foreground truncate">{order.handoverCountdown}</p><p className="text-muted-foreground mt-0.5 truncate">{order.handoverDate}</p></div>
+              <div className="text-xs overflow-hidden"><a href="#" className="text-primary font-medium hover:underline tabular-nums truncate block">{order.awbNumber || "—"}</a></div>
+              <div><span className="inline-block text-[10px] font-semibold rounded-full px-2 py-0.5 border text-sky-700 bg-sky-50 border-sky-200 whitespace-nowrap">Ready to ship</span></div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Footer */}
+      <div className="sticky bottom-0 flex items-center justify-end rounded-xl border border-border bg-white px-5 py-3 shadow-lg">
+        <Button size="sm" className="gap-1.5" data-testid="reprint-labels">
+          <Printer className="size-3.5" />
+          Re-print labels
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Cancel Order Modal ───────────────────────────────────────────
+const cancelReasonOptions = [
+  "Product not available",
+  "Product damaged",
+  "Customer requested cancellation",
+  "Product missing",
+  "Other",
+]
+
+function CancelOrderModal({ onClose }: { onClose: () => void }) {
+  const [selectedReason, setSelectedReason] = useState("")
+  const [otherReason, setOtherReason] = useState("")
+  const MpLogo = marketplaceLogos["amazon"]?.Logo
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="cancel-order-overlay" onClick={onClose}>
+      <div
+        data-testid="cancel-order-modal"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-2">
+          <h2 className="text-lg font-bold text-foreground font-heading">Cancel order</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors" data-testid="cancel-modal-close">
+            <X className="size-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Product Info */}
+        <div className="px-6 py-3 border-b border-border">
+          <div className="flex items-start gap-3">
+            <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <ImageIcon className="size-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-primary font-medium line-clamp-1">Reebok Men's Running Shoes - Stride Runner...</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Quantity : 2 &middot; Total amount : Rs.2,000</p>
+            </div>
+            <div className="text-right shrink-0">
+              {MpLogo && (
+                <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 mb-1", marketplaceLogos["amazon"]?.bgColor)}>
+                  <MpLogo className="h-2.5" />
+                </span>
+              )}
+              <p className="text-xs text-muted-foreground tabular-nums">7895784974847</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reason Selection */}
+        <div className="px-6 py-4 space-y-3">
+          {cancelReasonOptions.map((reason) => (
+            <label 
+              key={reason} 
+              className="flex items-center gap-3 cursor-pointer" 
+              data-testid={`cancel-reason-${reason.replace(/\s+/g, "-").toLowerCase()}`}
+              onClick={() => setSelectedReason(reason)}
+            >
+              <div className={cn(
+                "size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                selectedReason === reason ? "border-primary" : "border-muted-foreground/40"
+              )}>
+                {selectedReason === reason && <div className="size-2 rounded-full bg-primary" />}
+              </div>
+              <span className="text-sm text-foreground">{reason}</span>
+            </label>
+          ))}
+
+          {selectedReason === "Other" && (
+            <textarea
+              data-testid="cancel-other-reason"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm min-h-[80px] mt-2"
+              placeholder="Enter reason"
+              value={otherReason}
+              onChange={(e) => setOtherReason(e.target.value)}
+              onClick={() => {}}
+            />
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="px-6 pb-6">
+          <Button
+            className="w-full h-10 rounded-lg font-medium gap-1.5"
+            data-testid="cancel-order-cta"
+            disabled={!selectedReason}
+            onClick={() => { toast.success("Order cancelled successfully"); onClose() }}
+          >
+            Cancel order
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Assign Courier Modal ─────────────────────────────────────────
 function AssignCourierModal({ onClose }: { onClose: () => void }) {
-  const [pickupDate, setPickupDate] = useState("1 Dec 2025")
+  const [pickupDate, setPickupDate] = useState("")
   const [courier, setCourier] = useState("")
   const [courierService, setCourierService] = useState("")
 
@@ -1137,11 +1495,13 @@ function AssignCourierModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 py-4 space-y-4">
           <div>
             <label className="text-xs text-muted-foreground block mb-1.5">Pickup date</label>
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm">
-              <CalendarClock className="size-4 text-muted-foreground" />
-              <span className="flex-1">{pickupDate}</span>
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </div>
+            <input
+              type="date"
+              data-testid="courier-pickup-date"
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+            />
           </div>
 
           <div>
