@@ -1,0 +1,7 @@
+query AmazonAuthSession($input: AmazonAuthSessionInput!) {
+  amazonAuthSession(input: $input) {
+    url
+    state
+    sessionId
+  }
+}

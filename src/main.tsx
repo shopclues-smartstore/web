@@ -25,6 +25,7 @@ import { SyncingPage } from '@/pages/SyncingPage';
 import { GuestOnly } from '@/routes/GuestOnly';
 import { RequireAuth } from '@/routes/RequireAuth';
 import { RequireCompletedOnboarding } from '@/routes/RequireCompletedOnboarding';
+import { AmazonOAuthDone } from '@/pages/AmazonOAuthDone';
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -42,6 +43,9 @@ createRoot(document.getElementById("root")!).render(
           </Route>
 
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+          {/* Amazon OAuth popup landing — must be publicly accessible (no auth required) */}
+          <Route path="/connect/amazon/done" element={<AmazonOAuthDone />} />
 
           {/* Authenticated only: redirect to /login if not logged in */}
           <Route element={<RequireAuth />}>

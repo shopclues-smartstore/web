@@ -48,7 +48,7 @@ function getStepFromPath(pathname: string): WorkspaceOnboardingStep | null {
 export function ViewerBootstrapLoader() {
   const location = useLocation();
   const isOnOnboardingPath = location.pathname.startsWith("/onboarding");
-  const { isCompleted, currentStep, error, loading } = useViewerBootstrap({
+  const { isCompleted, currentStep, error, loading, bootstrap } = useViewerBootstrap({
     fetchPolicy: "network-only",
   });
 
@@ -68,7 +68,10 @@ export function ViewerBootstrapLoader() {
 
   // On onboarding path: resolve step and render that component (or redirect)
   if (isOnOnboardingPath) {
-    if (loading) {
+    // Avoid flashing the full-screen loader during background refetches
+    // (e.g. after connecting a marketplace). Only show it when we have no
+    // bootstrap data yet.
+    if (loading && !bootstrap) {
       return (
         <div
           className="flex min-h-screen items-center justify-center bg-background"
