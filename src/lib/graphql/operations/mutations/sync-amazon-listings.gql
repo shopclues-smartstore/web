@@ -1,0 +1,7 @@
+mutation SyncAmazonListings($input: SyncAmazonListingsInput!) {
+  syncAmazonListings(input: $input) {
+    syncJobId
+    syncedCount
+    status
+  }
+}

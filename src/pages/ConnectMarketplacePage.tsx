@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useViewerBootstrap } from "@/features/auth/hooks/useViewerBootstrap";
 import { useAmazonConnect } from "@/features/workspace/hooks/useAmazonConnect";
+import { useAdvanceOnboardingStepMutation } from "@/lib/graphql/generated/types";
 import { getAmazonConnectErrorMessage } from "@/lib/marketplace-errors";
 import { cn } from '@/lib/utils';
 
@@ -125,6 +126,8 @@ export function ConnectMarketplacePage() {
     existingAmazonConnection,
   );
 
+  const [advanceOnboardingStep] = useAdvanceOnboardingStepMutation();
+
   const [marketplaces, setMarketplaces] =
     useState<Marketplace[]>(initialMarketplaces);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -217,16 +220,25 @@ export function ConnectMarketplacePage() {
     setRegion("");
   };
 
+  const advanceToReviewSync = async () => {
+    if (workspace?.id) {
+      await advanceOnboardingStep({
+        variables: { input: { workspaceId: workspace.id, completedStep: "CONNECT_MARKETPLACES" } },
+      });
+    }
+    navigate("/onboarding/review");
+  };
+
   const handleContinue = () => {
     if (!hasAnyConnected) {
       setShowSkipWarning(true);
       return;
     }
-    navigate("/onboarding/review");
+    advanceToReviewSync();
   };
 
   const handleSkipContinue = () => {
-    navigate("/onboarding/review");
+    advanceToReviewSync();
   };
 
   return (

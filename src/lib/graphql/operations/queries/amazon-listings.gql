@@ -1,0 +1,19 @@
+query AmazonListings($input: AmazonListingsInput!) {
+  amazonListings(input: $input) {
+    items {
+      sku
+      asin
+      title
+      status
+      price
+      currency
+      quantity
+      imageUrl
+      productType
+      marketplaceId
+      rawSyncedAt
+    }
+    nextPageToken
+    totalCount
+  }
+}

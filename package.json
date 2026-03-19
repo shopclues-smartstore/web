@@ -15,8 +15,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "start": "vite --host 0.0.0.0 --port 3000",
-    "codegen": "graphql-codegen --config codegen.ts",
-    "codegen:watch": "graphql-codegen --config codegen.ts --watch"
+    "graphql:codegen": "graphql-codegen --config codegen.ts",
+    "graphql:codegen:watch": "graphql-codegen --config codegen.ts --watch"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",

@@ -24,9 +24,8 @@ query ViewerBootstrap {
         code
         name
         status
-        provider
-        currentPeriodStart
-        currentPeriodEnd
+        priceMonthly
+        currency
       }
       marketplaceConnections {
         id
