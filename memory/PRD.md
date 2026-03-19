@@ -6,45 +6,44 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 ## Architecture
 - **Stack**: Vite + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
 - **Routing**: React Router DOM v7
-- **Form Handling**: React Hook Form + Zod
 - **Icons**: Lucide React
-- **Animations**: Framer Motion + CSS animations
 - **Toasts**: Sonner
-- **Design System**: shadcn/ui (new-york style) with custom "Fresh Stripe" palette
+- **Design System**: shadcn/ui (new-york style) with custom palette
 
-## User Personas
-- **Primary**: E-commerce sellers managing multiple marketplaces (Amazon, Flipkart, eBay, Etsy, Shopify)
-- **Goal**: Centralized dashboard for products, inventory, orders, and pricing across channels
+## What's Been Implemented
 
-## Core Requirements (Static)
-- Signup, Login, Forgot Password auth screens
-- Seller App Shell with fixed header and collapsible sidebar
-- Dashboard with metric cards, recent activity, quick actions
-- Modern, trustworthy, Stripe-inspired design
-- Fresh blues & teals color palette
-- Responsive design (sidebar hidden on mobile)
+### Auth & Shell
+- [x] Signup, Login, Forgot Password pages
+- [x] App Shell with header, collapsible sidebar, dashboard
 
-## What's Been Implemented (Jan 2026)
-- [x] Signup page (split layout, branding panel, social auth, trust indicators, form validation)
-- [x] Login page (centered card, social auth, remember me, forgot password link)
-- [x] Forgot Password page (email form + success state with "Check your inbox")
-- [x] App Shell (fixed header with logo, store selector, notifications, help, user avatar dropdown)
-- [x] Collapsible sidebar (8 nav items with icons, collapsed on mobile/tablet)
-- [x] Dashboard (4 metric cards, 5 recent activity items, 4 quick actions)
-- [x] Placeholder pages for Products, Inventory, Orders, Pricing, Marketplaces, Reports, Settings
-- [x] Reusable components: Badge, Card, Skeleton, EmptyState
-- [x] Custom CSS theme with "Fresh Stripe" palette
-- [x] Google Fonts (Inter + Plus Jakarta Sans)
-- [x] Responsive design - mobile, tablet, desktop
-- [x] All interactive elements have data-testid attributes
-- [x] **Add Team Members onboarding step** (`/onboarding/add-team`) — invite form with role selector (Manager/Ops/Viewer), success banner, team members table with change role & remove, skip option, footer navigation (Back / Continue to Review & Start Sync)
-- [x] **Onboarding Step 1: Store Details** (`/onboarding/store-details`) — store name, country dropdown with flag emojis (auto-selects currency/timezone), primary marketplace dropdown, collapsible optional section (business type, tax ID)
-- [x] **Onboarding Step 2: Connect Marketplace** (`/onboarding/connect-marketplace`) — marketplace cards (Amazon, Flipkart, Meesho, Wish, More coming soon disabled), connection panel with API key/seller ID/region, test/connect buttons, skip warning banner, security reassurance
-- [x] **Onboarding Step 3: Review & Start Sync** (`/onboarding/review`) — summary cards for store details, connected marketplaces, sync scope (Products/Inventory/Orders), edit links, info banner, Start Sync CTA
-- [x] **Syncing Transition Screen** (`/onboarding/syncing`) — animated progress steps (4 stages completing sequentially over 6s), skeleton loaders, friendly messages, "You're all set!" completion state with Go to Dashboard CTA
-- [x] **Shared OnboardingLayout** component with progress indicator
-- [x] Testing: 100% pass rate on all onboarding pages (31/31 tests passed)
+### Onboarding Flow
+- [x] Choose Plan, Store Details, Connect Marketplace, Add Team, Review & Sync
 
+<<<<<<< HEAD
+### Products Page
+- [x] Progressive sync, marketplace filter, status filter, product table
+- [x] Fixed-width columns, text truncation, inline editing for Inventory & Price
+
+### Orders Section (Fully Built)
+- [x] **Channel Selector**: "All channels" unified view + individual marketplace views
+- [x] **Dynamic Status Counts**: Computed from actual data (synced with tables)
+- [x] **Customer details masking**: Phone/address masked for Pending, Accepted, Packed
+- [x] **Status column**: Shows actual order status badge
+- [x] **Horizontal scroll**: All tables support horizontal scroll with min-width
+- [x] **Filters**: Shipping (no duplicate), Date (with specific date picker), SKU (actual data), Payment
+- [x] **Status-specific table layouts**: Pending/Accepted, Packed, In-transit, Completed, Cancelled
+- [x] **Status-specific footers**:
+  - Pending: Export, Split orders (disabled), Mark OOS, Cancel order, Confirm order
+  - Accepted: Export, Cancel order, Schedule pickup, Assign courier
+  - Packed: Print labels, Create manifest
+  - In-transit: Export, Print invoice, Mark as delivered
+  - Completed: Export, Print invoice
+  - Cancelled: Export, Print credit note
+  - Ready to Ship: No footer (card view)
+- [x] **Ready to Ship**: Card layout + "View packages" sub-view
+- [x] **Schedule Pickup modal**, **Assign Courier modal** (with date picker), **Print Invoice modal**, **Cancel Order modal** (with 5 reasons + Other)
+- [x] **Order Detail Drawer**: Timeline, customer, shipping, payment info
+=======
 - [x] **Choose Plan onboarding step** (`/onboarding/choose-plan`) — **Interactive carousel-style layout**: selected plan slides to center with gradient border & elevated shadow, side cards scale down. 4 plans (Free/Silver/Gold/Platinum) with unique gradient colors, plan selector pills, prev/next arrows, "Best Deal" badge on Gold, "+2 months free" highlight, gradient CTA, selected plan confirmation pill, Compare Plans modal with 10-feature table. OnboardingLayout supports `wide` prop for this page.
 - [x] **Updated onboarding flow** to 4 steps: Choose Plan → Store Details → Connect Marketplace → Review & Sync. All step counters, progress bars, and navigation updated accordingly
 - [x] **Review page plan summary** — shows selected plan badge (Gold) with monthly price ($79/month) and "Change" link back to Choose Plan
@@ -53,29 +52,30 @@ Build the Seller-side application UI for SmartStore - a public, end-user facing 
 - [x] Testing: 95% pass rate on layout + modal redesign (23/24 tests passed, 1 low-priority non-blocking timing note)
 - [x] **Products Page with Progressive Sync Availability** (`/products`) — marketplace sync status banner with progress bar, marketplace filter dropdown with inline sync statuses (Synced/Syncing/Pending), product table showing only synced marketplace products, skeleton placeholder states for non-synced marketplaces, toast notifications when sync completes (Meesho at 8s, Wish at 15s), sidebar "Syncing" badge, product actions (View/Edit/Publish toggle), search by name/SKU, "All synced" completion state
 - [x] Testing: 100% pass rate on Products page (43/43 tests passed)
+>>>>>>> 6afc099d1fa46b80e8cfa173e7cc6e945de15b00
 
 ## Prioritized Backlog
-### P0 (Next)
-- Product listing page with table/grid view
-- Inventory management page
-- Order management page
 
-### P1
-- Product detail/edit screen
-- Order detail screen
-- Marketplace connection flow
-- Settings page (profile, billing, integrations)
+### P1 (Next)
+- Build Inventory management page
+- Build Pricing rules page
+- Build Marketplaces page
+- Build Reports page
+- Build Settings page
 
 ### P2
-- Reports & analytics with charts
-- Pricing rules engine UI
-- Bulk actions (import/export)
-- Search functionality across products/orders
-- Dark mode support
+- Product detail/edit screen
+- Marketplace connection flow
+- Dark mode
 
-## Next Tasks
-1. Build Product listing page with mock data table
-2. Build Order management page
-3. Build Inventory management page
-4. Add search bar to header
-5. Implement dark mode toggle
+### P3
+- Reports & analytics with charts
+- Pricing rules engine
+- Help section
+
+## Key Files
+- `/app/src/pages/OrdersPage.tsx` - Complete Orders module (~1980 lines)
+- `/app/src/components/ui/marketplace-logos.tsx` - Marketplace SVG logos
+- `/app/src/pages/ProductsPage.tsx` - Products page
+- `/app/src/main.tsx` - App routing
+- `/app/src/components/layout/AppShell.tsx` - Main layout
