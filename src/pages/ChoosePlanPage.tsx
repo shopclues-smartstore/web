@@ -1,273 +1,633 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CreditCard,
-  Info,
+  ChevronDown,
+  Search,
+  Filter,
+  CheckCircle2,
   Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+  Clock,
+  Package,
+  Eye,
+  Pencil,
+  ToggleLeft,
+  ToggleRight,
+  X,
+  Info,
+  RefreshCw,
+  Image as ImageIcon,
+  Check,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import { marketplaceLogos } from "@/components/ui/marketplace-logos"
 
-import {
-  getOnboardingSteps,
-  OnboardingLayout,
-} from "@/components/onboarding/OnboardingLayout";
-import { Button } from "@/components/ui/button";
-import { useViewerBootstrap } from "@/features/auth/hooks";
-import {
-  useSubscriptionPlansQuery,
-  useCreateWorkspaceSubscriptionMutation,
-  useAdvanceOnboardingStepMutation,
-  type SubscriptionPlanCode,
-} from "@/lib/graphql/generated/types";
+type SyncStatus = "synced" | "syncing" | "pending"
 
-import { ComparisonModal } from "./choose-plan/ComparisonModal";
-import { PlanCarousel } from "./choose-plan/PlanCarousel";
-import { transformPlanToUI } from "./choose-plan/transformPlan";
-import type { Plan } from "./choose-plan/types";
+interface MarketplaceSync {
+  id: string
+  name: string
+  status: SyncStatus
+  productCount: number
+}
 
-const findDefaultPlanIndex = (plans: Plan[], workspacePlanCode?: string | null): number => {
-  if (plans.length === 0) return 0;
+interface Product {
+  id: string
+  title: string
+  sku: string
+  marketplace: string
+  image: string
+  status: "ready" | "under_review" | "action_required"
+  inventory: number
+  price: string
+  published: boolean
+}
 
-  // If workspace has a plan code, try to find matching plan
-  if (workspacePlanCode) {
-    const workspacePlanIndex = plans.findIndex(
-      (p) => p.code.toUpperCase() === workspacePlanCode.toUpperCase(),
-    );
-    if (workspacePlanIndex >= 0) {
-      return workspacePlanIndex;
+const initialMarketplaces: MarketplaceSync[] = [
+  { id: "amazon", name: "Amazon", status: "synced", productCount: 156 },
+  { id: "flipkart", name: "Flipkart", status: "synced", productCount: 89 },
+  { id: "meesho", name: "Meesho", status: "syncing", productCount: 0 },
+  { id: "wish", name: "Wish", status: "pending", productCount: 0 },
+]
+
+const mockProducts: Product[] = [
+  { id: "p1", title: "Wireless Bluetooth Headphones Pro Max - Active Noise Cancelling Over-Ear", sku: "WBH-PRO-001", marketplace: "amazon", image: "", status: "ready", inventory: 234, price: "$49.99", published: true },
+  { id: "p2", title: "USB-C Hub 7-in-1 Multiport Adapter with 4K HDMI, SD Card Reader", sku: "UCH-7IN1-002", marketplace: "amazon", image: "", status: "ready", inventory: 89, price: "$29.99", published: true },
+  { id: "p3", title: "Smart LED Desk Lamp with Wireless Charging Base - Touch Dimmer", sku: "SLD-LAMP-003", marketplace: "amazon", image: "", status: "under_review", inventory: 45, price: "$39.99", published: false },
+  { id: "p4", title: "Mechanical Keyboard RGB Backlit - Hot Swappable Cherry MX Switches", sku: "MK-RGB-004", marketplace: "amazon", image: "", status: "ready", inventory: 312, price: "$79.99", published: true },
+  { id: "p5", title: "Portable Power Bank 20000mAh Fast Charging USB-C PD 65W Laptop", sku: "PPB-20K-005", marketplace: "amazon", image: "", status: "action_required", inventory: 8, price: "$24.99", published: true },
+  { id: "p6", title: "Noise Cancelling Earbuds TWS Bluetooth 5.3 - IPX7 Waterproof", sku: "NCE-BUD-006", marketplace: "amazon", image: "", status: "ready", inventory: 167, price: "$59.99", published: true },
+  { id: "p7", title: "Ergonomic Mouse Wireless Vertical Design - Rechargeable Silent Click", sku: "EMW-001", marketplace: "flipkart", image: "", status: "ready", inventory: 203, price: "\u20B91,499", published: true },
+  { id: "p8", title: "Webcam 1080p Full HD", sku: "WC-1080-002", marketplace: "flipkart", image: "", status: "ready", inventory: 56, price: "\u20B92,299", published: true },
+  { id: "p9", title: "USB Microphone Condenser Studio Recording Kit with Pop Filter & Arm", sku: "UMC-STD-003", marketplace: "flipkart", image: "", status: "under_review", inventory: 34, price: "\u20B93,499", published: false },
+  { id: "p10", title: "Smart Watch Fitness Tracker with Heart Rate SpO2 Sleep Monitor", sku: "SWF-TRK-004", marketplace: "flipkart", image: "", status: "ready", inventory: 128, price: "\u20B94,999", published: true },
+  { id: "p11", title: "Laptop Stand Adjustable Aluminium Foldable Ergonomic Riser for MacBook", sku: "LSA-ALU-005", marketplace: "flipkart", image: "", status: "action_required", inventory: 3, price: "\u20B91,999", published: true },
+]
+
+const statusConfig = {
+  ready: { label: "Ready", variant: "success" as const, dotColor: "bg-emerald-500" },
+  under_review: { label: "Under review", variant: "default" as const, dotColor: "bg-blue-500" },
+  action_required: { label: "Action required", variant: "warning" as const, dotColor: "bg-amber-500" },
+}
+
+const syncStatusConfig = {
+  synced: { label: "Synced", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+  syncing: { label: "Syncing", icon: Loader2, color: "text-primary", bg: "bg-primary/10", spin: true },
+  pending: { label: "Pending", icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+}
+
+export function ProductsPage() {
+  const [marketplaces, setMarketplaces] = useState<MarketplaceSync[]>(initialMarketplaces)
+  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const [selectedFilter, setSelectedFilter] = useState("all")
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<"all" | "ready" | "under_review" | "action_required">("all")
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [bannerVisible, setBannerVisible] = useState(true)
+
+  const filterRef = useRef<HTMLDivElement>(null)
+  const statusRef = useRef<HTMLDivElement>(null)
+
+  const syncedCount = marketplaces.filter((m) => m.status === "synced").length
+  const totalCount = marketplaces.length
+  const allSynced = syncedCount === totalCount
+
+  // Simulate Meesho finishing sync after 8 seconds
+  useEffect(() => {
+    const timer1 = setTimeout(() => {
+      setMarketplaces((prev) =>
+        prev.map((m) =>
+          m.id === "meesho" ? { ...m, status: "synced" as SyncStatus, productCount: 42 } : m
+        )
+      )
+      // Add Meesho products
+      const meeshoProducts: Product[] = [
+        { id: "p12", title: "Cotton T-Shirt Combo Pack", sku: "CTS-CMB-001", marketplace: "meesho", image: "", status: "ready", inventory: 520, price: "\u20B9499", published: true },
+        { id: "p13", title: "Phone Case Silicone Cover", sku: "PCS-SIL-002", marketplace: "meesho", image: "", status: "ready", inventory: 890, price: "\u20B9199", published: true },
+        { id: "p14", title: "Kitchen Organizer Set", sku: "KOS-SET-003", marketplace: "meesho", image: "", status: "under_review", inventory: 145, price: "\u20B9349", published: false },
+      ]
+      setProducts((prev) => [...prev, ...meeshoProducts])
+      toast.success("Meesho marketplace sync completed", {
+        description: "42 products are now available for review.",
+      })
+    }, 8000)
+
+    // Simulate Wish finishing sync after 15 seconds
+    const timer2 = setTimeout(() => {
+      setMarketplaces((prev) =>
+        prev.map((m) => {
+          if (m.id === "wish") return { ...m, status: "synced" as SyncStatus, productCount: 28 }
+          if (m.id === "meesho" && m.status !== "synced") return { ...m, status: "synced" as SyncStatus, productCount: 42 }
+          return m
+        })
+      )
+      const wishProducts: Product[] = [
+        { id: "p15", title: "Mini Bluetooth Speaker", sku: "MBS-PTB-001", marketplace: "wish", image: "", status: "ready", inventory: 340, price: "$12.99", published: true },
+        { id: "p16", title: "LED Strip Lights RGB 5m", sku: "LSL-RGB-002", marketplace: "wish", image: "", status: "ready", inventory: 215, price: "$8.99", published: true },
+      ]
+      setProducts((prev) => [...prev, ...wishProducts])
+      toast.success("Wish marketplace sync completed", {
+        description: "28 products are now available for review.",
+      })
+    }, 15000)
+
+    return () => {
+      clearTimeout(timer1)
+      clearTimeout(timer2)
     }
-  }
-
-  // Fallback to Gold plan (Best Deal)
-  const goldIndex = plans.findIndex((p) => p.code.toUpperCase() === "GOLD");
-  return goldIndex >= 0 ? goldIndex : Math.min(1, plans.length - 1);
-};
-
-export function ChoosePlanPage() {
-  const navigate = useNavigate();
-  const [compareOpen, setCompareOpen] = useState(false);
-  const { workspace } = useViewerBootstrap({ fetchPolicy: "cache-first" });
-
-  const { data, loading, error } = useSubscriptionPlansQuery({
-    errorPolicy: "all",
-    fetchPolicy: "cache-first",
-  });
-
-  const [createSubscription, { loading: creatingSubscription }] =
-    useCreateWorkspaceSubscriptionMutation({ errorPolicy: "all" });
-
-  const [advanceOnboardingStep] = useAdvanceOnboardingStepMutation();
-
-  const plans = useMemo(() => {
-    if (!data?.subscriptionPlans) return [];
-
-    return data.subscriptionPlans
-      .filter((plan) => plan.isActive)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map(transformPlanToUI)
-      .filter((plan): plan is Plan => plan !== null);
-  }, [data]);
-
-  const defaultIndex = useMemo(
-    () => findDefaultPlanIndex(plans, workspace?.plan?.code),
-    [plans, workspace?.plan?.code],
-  );
-
-  const [selectedIndex, setSelectedIndex] = useState(() => defaultIndex);
+  }, [])
 
   useEffect(() => {
-    if (plans.length > 0) {
-      setSelectedIndex(defaultIndex);
+    function handleClick(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false)
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setStatusFilterOpen(false)
     }
-  }, [defaultIndex, plans.length]);
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
-  const selectedPlan = plans[selectedIndex] || plans[0];
-
-  useEffect(() => {
-    if (error) {
-      toast.error("Failed to load subscription plans. Please try again.");
+  // Filter products
+  const filteredProducts = products.filter((p) => {
+    const mp = marketplaces.find((m) => m.id === p.marketplace)
+    if (!mp || mp.status !== "synced") return false
+    if (selectedFilter !== "all" && p.marketplace !== selectedFilter) return false
+    if (statusFilter !== "all" && p.status !== statusFilter) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      return p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
     }
-  }, [error]);
+    return true
+  })
 
-  if (loading || plans.length === 0) {
-    return (
-      <OnboardingLayout
-        steps={getOnboardingSteps(1)}
-        currentStep={2}
-        totalSteps={4}
-        wide
-      >
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto mb-4 size-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading plans...</p>
-          </div>
-        </div>
-      </OnboardingLayout>
-    );
+  // Get pending/syncing marketplaces for skeletons
+  const nonSyncedMps = marketplaces.filter((m) => m.status !== "synced" && !m.id.startsWith("more"))
+
+  const selectedMpName = selectedFilter === "all"
+    ? "All Marketplaces"
+    : marketplaces.find((m) => m.id === selectedFilter)?.name ?? "All"
+
+  const selectedMpLogo = selectedFilter !== "all" ? marketplaceLogos[selectedFilter] : null
+
+  const handleTogglePublish = (id: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, published: !p.published } : p))
+    )
   }
 
-  const handleContinue = async () => {
-    if (!selectedPlan || !workspace?.id) {
-      toast.error("Please select a plan and ensure workspace is created.");
-      return;
-    }
+  const handleUpdateInventory = useCallback((id: string, value: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, inventory: value } : p))
+    )
+    toast.success("Inventory updated")
+  }, [])
 
-    try {
-      const result = await createSubscription({
-        variables: {
-          input: {
-            workspaceId: workspace.id,
-            planCode: selectedPlan.code.toUpperCase() as SubscriptionPlanCode,
-            status: "ACTIVE",
-            provider: "MANUAL",
-            cancelAtPeriodEnd: false,
-          },
-        },
-      });
+  const handleUpdatePrice = useCallback((id: string, value: string) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, price: value } : p))
+    )
+    toast.success("Price updated")
+  }, [])
 
-      if (result.data?.createWorkspaceSubscription?.subscription) {
-        await advanceOnboardingStep({
-          variables: { input: { workspaceId: workspace.id, completedStep: "PLAN_SELECT" } },
-        });
-        toast.success(`${selectedPlan.name} plan activated successfully!`);
-        navigate("/onboarding/connect-marketplace");
-      } else if (result.error) {
-        const errorMessage = result.error.message || "Failed to create subscription.";
-        toast.error(errorMessage);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create subscription.";
-      toast.error(message);
-    }
-  };
+  const currentAllSynced = marketplaces.every((m) => m.status === "synced")
 
   return (
-    <OnboardingLayout
-      steps={getOnboardingSteps(1)}
-      currentStep={2}
-      totalSteps={4}
-      wide
-      footer={
-        <>
-          <Button
-            variant="outline"
-            data-testid="back-btn"
-            className="rounded-lg"
-            asChild
-          >
-            <Link to="/onboarding/store-details">
-              <ArrowLeft className="size-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-          <Button
-            data-testid="continue-btn"
-            onClick={handleContinue}
-            disabled={creatingSubscription || !workspace?.id}
-            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            {creatingSubscription ? (
-              <>
-                <Loader2 className="size-4 mr-2 animate-spin" />
-                Activating...
-              </>
-            ) : (
-              <>
-                Continue with {selectedPlan.name}
-                <ArrowRight className="size-4 ml-2" />
-              </>
-            )}
-          </Button>
-        </>
-      }
-    >
-      <div data-testid="choose-plan-page">
-        <div className="text-center mb-10">
-          <div className="mx-auto mb-4 size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <CreditCard className="size-7 text-primary" />
-          </div>
-          <h1
-            className="font-heading text-3xl font-bold tracking-tight text-foreground"
-            data-testid="choose-plan-title"
-          >
-            Choose your plan
-          </h1>
-          <p className="text-base text-muted-foreground mt-2 max-w-md mx-auto">
-            Clear pricing. No strings attached. Start small and upgrade anytime.
-          </p>
-        </div>
-
+    <div className="space-y-6" data-testid="products-page">
+      {/* Status Banner */}
+      {bannerVisible && !currentAllSynced && (
         <div
-          className="flex items-center justify-center gap-2 mb-8"
-          data-testid="plan-pills"
+          data-testid="sync-status-banner"
+          className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 animate-fade-up"
         >
-          {plans.map((plan, i) => (
-            <button
-              key={plan.id}
-              data-testid={`plan-pill-${plan.code.toLowerCase()}`}
-              onClick={() => setSelectedIndex(i)}
-              className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
-                selectedIndex === i
-                  ? "bg-foreground text-background shadow-lg"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-              }`}
-            >
-              {plan.name}
-              {plan.popular && selectedIndex !== i && (
-                <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary animate-pulse" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <PlanCarousel
-          plans={plans}
-          selectedIndex={selectedIndex}
-          onSelectPlan={setSelectedIndex}
-        />
-
-        <div className="text-center mb-6" data-testid="selected-confirmation">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 transition-all duration-300">
-            <Check className="size-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              <span className="text-primary font-semibold">
-                {selectedPlan.name}
-              </span>{" "}
-              plan selected
-              <span className="text-muted-foreground">
-                {" "}
-                — {selectedPlan.price}
-                {selectedPlan.period}
-              </span>
-            </span>
+          <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+            <RefreshCw className="size-4 text-primary animate-spin" style={{ animationDuration: "3s" }} />
           </div>
-        </div>
-
-        <div className="text-center mb-8 space-y-2">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">
+              Your marketplaces are still syncing.
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              You can review products from completed marketplaces while we continue.
+            </p>
+            <div className="flex items-center gap-2 mt-3">
+              {/* Mini progress bar */}
+              <div className="h-1.5 w-32 rounded-full bg-border overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-700"
+                  style={{ width: `${(marketplaces.filter((m) => m.status === "synced").length / totalCount) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground" data-testid="sync-progress-text">
+                {marketplaces.filter((m) => m.status === "synced").length} of {totalCount} marketplaces synced
+              </span>
+            </div>
+          </div>
           <button
-            data-testid="compare-plans-btn"
-            onClick={() => setCompareOpen(true)}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 hover:gap-2"
+            data-testid="dismiss-sync-banner"
+            onClick={() => setBannerVisible(false)}
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
-            Compare all plans in detail
-            <ArrowRight className="size-3 transition-all duration-200" />
+            <X className="size-4" />
           </button>
-          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-            <Info className="size-3" />
-            You can change your plan later from Settings.
+        </div>
+      )}
+
+      {/* All synced message */}
+      {currentAllSynced && bannerVisible && (
+        <div
+          data-testid="all-synced-banner"
+          className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 animate-fade-up"
+        >
+          <CheckCircle2 className="size-5 text-emerald-500 shrink-0" />
+          <p className="text-sm font-medium text-emerald-800 flex-1">
+            All marketplaces are now synced.
+          </p>
+          <button
+            data-testid="dismiss-all-synced"
+            onClick={() => setBannerVisible(false)}
+            className="text-emerald-600 hover:text-emerald-800 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground" data-testid="products-title">
+            Products
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} available
           </p>
         </div>
       </div>
 
-      <ComparisonModal
-        isOpen={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        plans={plans}
-      />
-    </OnboardingLayout>
-  );
+      {/* Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3" data-testid="filters-bar">
+        {/* Marketplace Filter */}
+        <div ref={filterRef} className="relative">
+          <button
+            data-testid="marketplace-filter-btn"
+            onClick={() => setFilterOpen(!filterOpen)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm"
+          >
+            <Filter className="size-4 text-muted-foreground" />
+            {selectedMpLogo ? (
+              <selectedMpLogo.Logo className="h-3.5" />
+            ) : (
+              <span>{selectedMpName}</span>
+            )}
+            <ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", filterOpen && "rotate-180")} />
+          </button>
+          {filterOpen && (
+            <div
+              data-testid="marketplace-filter-dropdown"
+              className="absolute top-full left-0 mt-1 w-64 bg-white border border-border rounded-xl shadow-lg p-1 z-20 animate-fade-up"
+            >
+              <button
+                data-testid="filter-all"
+                onClick={() => { setSelectedFilter("all"); setFilterOpen(false) }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                  selectedFilter === "all" ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                )}
+              >
+                All Marketplaces
+                <span className="text-xs text-muted-foreground">{products.filter((p) => marketplaces.find((m) => m.id === p.marketplace)?.status === "synced").length} products</span>
+              </button>
+              <div className="h-px bg-border my-1" />
+              {marketplaces.filter((m) => !m.id.startsWith("more")).map((mp) => {
+                const cfg = syncStatusConfig[mp.status]
+                const Icon = cfg.icon
+                return (
+                  <button
+                    key={mp.id}
+                    data-testid={`filter-${mp.id}`}
+                    onClick={() => {
+                      if (mp.status === "synced") {
+                        setSelectedFilter(mp.id)
+                        setFilterOpen(false)
+                      }
+                    }}
+                    disabled={mp.status !== "synced"}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                      mp.status !== "synced" && "opacity-50 cursor-not-allowed",
+                      selectedFilter === mp.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const mpLogo = marketplaceLogos[mp.id]
+                        return mpLogo ? <mpLogo.Logo /> : <span>{mp.name}</span>
+                      })()}
+                      <span className={cn("inline-flex items-center gap-1 text-xs", cfg.color)}>
+                        <Icon className={cn("size-3", cfg.spin && "animate-spin")} />
+                        {cfg.label}
+                      </span>
+                    </div>
+                    {mp.status === "synced" && (
+                      <span className="text-xs text-muted-foreground">{mp.productCount}</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Status Filter */}
+        <div ref={statusRef} className="relative">
+          <button
+            data-testid="status-filter-btn"
+            onClick={() => setStatusFilterOpen(!statusFilterOpen)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors shadow-sm"
+          >
+            {statusFilter === "all" ? (
+              <span className="text-foreground">All Statuses</span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className={cn("size-1.5 rounded-full", statusConfig[statusFilter].dotColor)} />
+                <span className="text-foreground">{statusConfig[statusFilter].label}</span>
+              </span>
+            )}
+            <ChevronDown className={cn("size-4 text-muted-foreground transition-transform duration-200", statusFilterOpen && "rotate-180")} />
+          </button>
+          {statusFilterOpen && (
+            <div
+              data-testid="status-filter-dropdown"
+              className="absolute top-full left-0 mt-1 w-52 bg-white border border-border rounded-xl shadow-lg p-1 z-20 animate-fade-up"
+            >
+              <button
+                data-testid="status-filter-all"
+                onClick={() => { setStatusFilter("all"); setStatusFilterOpen(false) }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                  statusFilter === "all" ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                )}
+              >
+                All Statuses
+                <span className="text-xs text-muted-foreground">
+                  {products.filter((p) => marketplaces.find((m) => m.id === p.marketplace)?.status === "synced").length}
+                </span>
+              </button>
+              <div className="h-px bg-border my-1" />
+              {(["ready", "under_review", "action_required"] as const).map((st) => {
+                const cfg = statusConfig[st]
+                const count = products.filter((p) => {
+                  const mp = marketplaces.find((m) => m.id === p.marketplace)
+                  return mp?.status === "synced" && p.status === st
+                }).length
+                return (
+                  <button
+                    key={st}
+                    data-testid={`status-filter-${st}`}
+                    onClick={() => { setStatusFilter(st); setStatusFilterOpen(false) }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
+                      statusFilter === st ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={cn("size-2 rounded-full", cfg.dotColor)} />
+                      {cfg.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Search */}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          <Input
+            data-testid="product-search-input"
+            placeholder="Search by name or SKU..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9 pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Product Table */}
+      <Card className="overflow-hidden" data-testid="product-table">
+        {/* Table header */}
+        <div className="hidden sm:grid grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-6 px-5 py-3 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+          <span>Product</span>
+          <span>SKU</span>
+          <span>Marketplace</span>
+          <span>Status</span>
+          <span>Inventory</span>
+          <span>Price</span>
+          <span>Actions</span>
+        </div>
+
+        {/* Product rows */}
+        <div className="divide-y divide-border">
+          {filteredProducts.map((product) => {
+            const stCfg = statusConfig[product.status]
+            return (
+              <div
+                key={product.id}
+                data-testid={`product-row-${product.id}`}
+                className="grid grid-cols-1 sm:grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-2 sm:gap-6 px-5 py-4 items-center hover:bg-muted/20 transition-colors duration-150"
+              >
+                {/* Product */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <ImageIcon className="size-4 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs font-medium text-foreground truncate">{product.title}</span>
+                </div>
+
+                {/* SKU */}
+                <span className="text-xs font-mono text-muted-foreground">{product.sku}</span>
+
+                {/* Marketplace */}
+                <div>
+                  {(() => {
+                    const mpLogo = marketplaceLogos[product.marketplace]
+                    return mpLogo ? (
+                      <span className={cn("inline-flex items-center rounded-md border px-2 py-1", mpLogo.bgColor)}>
+                        <mpLogo.Logo />
+                      </span>
+                    ) : (
+                      <Badge variant="outline" className="text-xs capitalize">{product.marketplace}</Badge>
+                    )
+                  })()}
+                </div>
+
+                {/* Status */}
+                <div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                    <span className={cn("size-1.5 rounded-full", stCfg.dotColor)} />
+                    {stCfg.label}
+                  </span>
+                </div>
+
+                {/* Inventory */}
+                <InlineEditCell
+                  testId={`inventory-${product.id}`}
+                  value={String(product.inventory)}
+                  displayClass={cn("text-sm tabular-nums", product.inventory <= 10 ? "text-amber-600 font-medium" : "text-foreground")}
+                  onSave={(v) => handleUpdateInventory(product.id, Number(v) || 0)}
+                  type="number"
+                />
+
+                {/* Price */}
+                <InlineEditCell
+                  testId={`price-${product.id}`}
+                  value={product.price}
+                  displayClass="text-sm font-medium tabular-nums text-foreground"
+                  onSave={(v) => handleUpdatePrice(product.id, v)}
+                />
+
+                {/* Actions */}
+                <div className="flex items-center gap-1">
+                  <button
+                    data-testid={`view-product-${product.id}`}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    title="View product"
+                  >
+                    <Eye className="size-3.5" />
+                  </button>
+                  <button
+                    data-testid={`edit-product-${product.id}`}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    title="Edit product"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    data-testid={`toggle-publish-${product.id}`}
+                    onClick={() => handleTogglePublish(product.id)}
+                    className={cn(
+                      "rounded-md p-1.5 transition-colors",
+                      product.published ? "text-emerald-600 hover:bg-emerald-50" : "text-muted-foreground hover:bg-muted"
+                    )}
+                    title={product.published ? "Unpublish" : "Publish"}
+                  >
+                    {product.published ? <ToggleRight className="size-3.5" /> : <ToggleLeft className="size-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* Skeleton states for syncing/pending marketplaces */}
+      {nonSyncedMps.length > 0 && (selectedFilter === "all" || nonSyncedMps.some((m) => m.id === selectedFilter)) && (
+        <div className="space-y-4" data-testid="skeleton-section">
+          {nonSyncedMps.map((mp) => {
+            const cfg = syncStatusConfig[mp.status]
+            const Icon = cfg.icon
+            return (
+              <div key={mp.id} data-testid={`skeleton-block-${mp.id}`}>
+                {/* Label */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon className={cn("size-4", cfg.color, cfg.spin && "animate-spin")} />
+                  <span className="text-sm text-muted-foreground">
+                    Products from
+                  </span>
+                  {(() => {
+                    const mpLogo = marketplaceLogos[mp.id]
+                    return mpLogo ? (
+                      <mpLogo.Logo className="h-3.5" />
+                    ) : (
+                      <span className="text-sm font-medium text-muted-foreground">{mp.name}</span>
+                    )
+                  })()}
+                  <span className="text-sm text-muted-foreground">
+                    will appear here once sync completes.
+                  </span>
+                </div>
+                {/* Skeleton rows */}
+                <Card className="overflow-hidden">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-1 sm:grid-cols-[300px_100px_110px_110px_90px_80px_100px] gap-6 px-5 py-4 items-center border-b border-border last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-lg bg-muted animate-skeleton" />
+                        <div className="space-y-1.5 flex-1">
+                          <div className="h-3 w-3/4 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1}s` }} />
+                        </div>
+                      </div>
+                      <div className="h-3 w-16 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.05}s` }} />
+                      <div className="h-5 w-16 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.1}s` }} />
+                      <div className="h-3 w-14 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.15}s` }} />
+                      <div className="h-3 w-8 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.2}s` }} />
+                      <div className="h-3 w-12 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.25}s` }} />
+                      <div className="h-3 w-16 rounded bg-muted animate-skeleton" style={{ animationDelay: `${i * 0.1 + 0.3}s` }} />
+                    </div>
+                  ))}
+                </Card>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+function InlineEditCell({ testId, value, displayClass, onSave, type = "text" }: {
+  testId: string; value: string; displayClass: string; onSave: (v: string) => void; type?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { setDraft(value) }, [value])
+  useEffect(() => { if (editing) inputRef.current?.select() }, [editing])
+
+  const commit = () => {
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== value) onSave(trimmed)
+    else setDraft(value)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          data-testid={`${testId}-input`}
+          type={type}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(value); setEditing(false) } }}
+          onBlur={commit}
+          className="h-7 w-full rounded-md border border-primary bg-white px-2 text-sm tabular-nums outline-none ring-2 ring-primary/20"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="group flex items-center gap-1.5">
+      <span className={displayClass}>{value}</span>
+      <button
+        data-testid={`${testId}-edit-btn`}
+        onClick={() => setEditing(true)}
+        className="rounded p-0.5 text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-primary hover:bg-primary/10 transition-colors"
+        title="Edit"
+      >
+        <Pencil className="size-3" />
+      </button>
+    </div>
+  )
 }
