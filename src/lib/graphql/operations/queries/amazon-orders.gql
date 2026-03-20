@@ -1,0 +1,20 @@
+query AmazonOrders($input: AmazonOrdersInput!) {
+  amazonOrders(input: $input) {
+    items {
+      id
+      amazonOrderId
+      purchaseDate
+      lastUpdateDate
+      orderStatus
+      fulfillmentChannel
+      salesChannel
+      orderTotal
+      currency
+      numberOfItemsShipped
+      numberOfItemsUnshipped
+      rawSyncedAt
+    }
+    nextPageToken
+    totalCount
+  }
+}
