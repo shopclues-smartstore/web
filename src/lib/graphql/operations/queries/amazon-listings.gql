@@ -3,13 +3,82 @@ query AmazonListings($input: AmazonListingsInput!) {
     items {
       sku
       asin
+      fnSku
+      parentAsin
+      variationTheme
       title
       status
       price
+      shippingPrice
+      regularPrice
+      businessPrice
       currency
       quantity
       imageUrl
+      images
       productType
+      conditionType
+      fulfillmentChannel
+      brand
+      manufacturer
+      modelNumber
+      description
+      bulletPoints
+      color
+      size
+      material
+      styleNote
+      patternName
+      department
+      countryOfOrigin
+      weight
+      issues {
+        code
+        message
+        severity
+        attributeNames
+        categories
+      }
+      listingCreatedAt
+      listingUpdatedAt
+      catalogImages {
+        variant
+        link
+        height
+        width
+      }
+      salesRanks {
+        title
+        rank
+        classificationId
+        link
+      }
+      bestSalesRank
+      bestSalesRankCategory
+      itemDimensions {
+        height { unit value }
+        length { unit value }
+        width { unit value }
+        weight { unit value }
+      }
+      packageDimensions {
+        height { unit value }
+        length { unit value }
+        width { unit value }
+        weight { unit value }
+      }
+      buyBoxPrice
+      buyBoxCurrency
+      lowestNewPrice
+      numberOfOffers
+      competitivePrices {
+        condition
+        isBuyBoxWinner
+        listingPrice
+        listingPriceCurrency
+        shippingPrice
+        shippingPriceCurrency
+      }
       marketplaceId
       rawSyncedAt
     }

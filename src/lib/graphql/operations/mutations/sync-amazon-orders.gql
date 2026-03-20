@@ -1,0 +1,7 @@
+mutation SyncAmazonOrders($input: SyncAmazonOrdersInput!) {
+  syncAmazonOrders(input: $input) {
+    syncJobId
+    syncedCount
+    status
+  }
+}

@@ -20,6 +20,8 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { ProductsPage } from '@/pages/ProductsPage';
+import { OrdersPage } from '@/pages/OrdersPage';
+import { MarketplacesPage } from '@/pages/MarketplacesPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { SyncingPage } from '@/pages/SyncingPage';
 import { GuestOnly } from '@/routes/GuestOnly';
@@ -59,9 +61,9 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/inventory" element={<PlaceholderPage />} />
-                <Route path="/orders" element={<PlaceholderPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/pricing" element={<PlaceholderPage />} />
-                <Route path="/marketplaces" element={<PlaceholderPage />} />
+                <Route path="/marketplaces" element={<MarketplacesPage />} />
                 <Route path="/reports" element={<PlaceholderPage />} />
                 <Route path="/settings" element={<PlaceholderPage />} />
               </Route>

@@ -1,0 +1,7 @@
+mutation GetOrderDocument($input: GetOrderDocumentInput!) {
+  getOrderDocument(input: $input) {
+    downloadUrl
+    base64Pdf
+    fileName
+  }
+}
